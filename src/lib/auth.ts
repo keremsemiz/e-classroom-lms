@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getDb } from './db';
-import { User, UserRole, Session } from '@prisma/client';
+import { createClient } from '@libsql/client';
+import { UserRole } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'e-classroom-smz-education-secret-key-2024';
 const JWT_EXPIRES_IN = '7d';
@@ -21,6 +21,21 @@ export interface AuthUser {
   role: UserRole;
   schoolId?: string | null;
   avatar?: string | null;
+}
+
+// Get database client
+function getDb() {
+  const databaseUrl = process.env.DATABASE_URL
+  const authToken = process.env.DATABASE_AUTH_TOKEN
+
+  if (!databaseUrl || !authToken) {
+    throw new Error('Database environment variables not set')
+  }
+
+  return createClient({
+    url: databaseUrl,
+    authToken: authToken,
+  })
 }
 
 // ============================================
@@ -59,98 +74,92 @@ async function createSession(
   userId: string,
   userAgent?: string,
   ipAddress?: string
-): Promise<{ session: Session; token: string }> {
-  const db = getDb();
+): Promise<{ token: string }> {
+  const db = getDb()
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true, role: true, schoolId: true },
-  });
+  // Get user info
+  const result = await db.execute({
+    sql: 'SELECT id, email, role, schoolId FROM User WHERE id = ?',
+    args: [userId]
+  })
 
-  if (!user) {
+  if (result.rows.length === 0) {
     throw new Error('User not found');
   }
 
+  const user = result.rows[0]
   const token = generateToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-    schoolId: user.schoolId ?? undefined,
+    userId: user.id as string,
+    email: user.email as string,
+    role: user.role as UserRole,
+    schoolId: user.schoolId as string | undefined,
   });
 
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+  expiresAt.setDate(expiresAt.getDate() + 7);
 
-  const session = await db.session.create({
-    data: {
-      userId,
-      token,
-      userAgent,
-      ipAddress,
-      expiresAt,
-    },
+  const sessionId = generateCuid()
+  await db.execute({
+    sql: `INSERT INTO Session (id, userId, token, userAgent, ipAddress, expiresAt)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [sessionId, userId, token, userAgent || null, ipAddress || null, expiresAt.toISOString()]
   });
 
-  return { session, token };
+  return { token };
 }
 
 export async function validateSession(token: string): Promise<AuthUser | null> {
-  const db = getDb();
+  const db = getDb()
   const payload = verifyToken(token);
   if (!payload) return null;
 
-  const session = await db.session.findUnique({
-    where: { token },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          schoolId: true,
-          avatar: true,
-          isActive: true,
-        },
-      },
-    },
-  });
+  const result = await db.execute({
+    sql: `SELECT s.id as sessionId, s.expiresAt, u.id, u.email, u.name, u.role, u.schoolId, u.avatar, u.isActive
+          FROM Session s
+          JOIN User u ON s.userId = u.id
+          WHERE s.token = ?`,
+    args: [token]
+  })
 
-  if (!session || !session.user || !session.user.isActive) {
+  if (result.rows.length === 0) {
     return null;
   }
 
-  if (session.expiresAt < new Date()) {
-    await db.session.delete({ where: { id: session.id } });
+  const row = result.rows[0]
+
+  if (row.isActive !== 1) {
+    return null;
+  }
+
+  const expiresAt = new Date(row.expiresAt as string)
+  if (expiresAt < new Date()) {
+    await db.execute({
+      sql: 'DELETE FROM Session WHERE id = ?',
+      args: [row.sessionId]
+    })
     return null;
   }
 
   return {
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name,
-    role: session.user.role,
-    schoolId: session.user.schoolId,
-    avatar: session.user.avatar,
+    id: row.id as string,
+    email: row.email as string,
+    name: row.name as string,
+    role: row.role as UserRole,
+    schoolId: row.schoolId as string | null,
+    avatar: row.avatar as string | null,
   };
 }
 
 export async function invalidateSession(token: string): Promise<void> {
-  const db = getDb();
+  const db = getDb()
   try {
-    await db.session.delete({ where: { token } });
+    await db.execute({
+      sql: 'DELETE FROM Session WHERE token = ?',
+      args: [token]
+    })
   } catch {
     // Session might not exist, ignore
   }
-}
-
-export async function cleanupExpiredSessions(): Promise<void> {
-  const db = getDb();
-  await db.session.deleteMany({
-    where: {
-      expiresAt: { lt: new Date() },
-    },
-  });
 }
 
 // ============================================
@@ -164,14 +173,15 @@ export async function registerUser(data: {
   role?: UserRole;
   schoolId?: string;
 }): Promise<{ user: AuthUser; token: string }> {
-  const db = getDb();
+  const db = getDb()
 
   // Check if user already exists
-  const existingUser = await db.user.findUnique({
-    where: { email: data.email.toLowerCase() },
-  });
+  const existing = await db.execute({
+    sql: 'SELECT id FROM User WHERE email = ?',
+    args: [data.email.toLowerCase()]
+  })
 
-  if (existingUser) {
+  if (existing.rows.length > 0) {
     throw new Error('User with this email already exists');
   }
 
@@ -179,27 +189,31 @@ export async function registerUser(data: {
   const hashedPassword = await hashPassword(data.password);
 
   // Create user
-  const user = await db.user.create({
-    data: {
-      email: data.email.toLowerCase(),
-      password: hashedPassword,
-      name: data.name,
-      role: data.role || UserRole.STUDENT,
-      schoolId: data.schoolId,
-    },
-  });
+  const userId = generateCuid()
+  await db.execute({
+    sql: `INSERT INTO User (id, email, password, name, role, schoolId, isActive)
+          VALUES (?, ?, ?, ?, ?, ?, 1)`,
+    args: [
+      userId,
+      data.email.toLowerCase(),
+      hashedPassword,
+      data.name,
+      data.role || 'STUDENT',
+      data.schoolId || null
+    ]
+  })
 
   // Create session
-  const { token } = await createSession(user.id);
+  const { token } = await createSession(userId);
 
   return {
     user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      schoolId: user.schoolId,
-      avatar: user.avatar,
+      id: userId,
+      email: data.email.toLowerCase(),
+      name: data.name,
+      role: data.role || UserRole.STUDENT,
+      schoolId: data.schoolId || null,
+      avatar: null,
     },
     token,
   };
@@ -211,43 +225,46 @@ export async function loginUser(
   userAgent?: string,
   ipAddress?: string
 ): Promise<{ user: AuthUser; token: string }> {
-  console.log('[loginUser] Starting login for:', email);
-  const db = getDb();
+  console.log('[loginUser] Starting login for:', email)
+  const db = getDb()
 
-  const user = await db.user.findUnique({
-    where: { email: email.toLowerCase() },
-  });
+  const result = await db.execute({
+    sql: 'SELECT * FROM User WHERE email = ?',
+    args: [email.toLowerCase()]
+  })
 
-  if (!user) {
+  if (result.rows.length === 0) {
     throw new Error('Invalid email or password');
   }
 
-  if (!user.isActive) {
+  const user = result.rows[0]
+
+  if (user.isActive !== 1) {
     throw new Error('Account is disabled. Please contact administrator.');
   }
 
-  const isValidPassword = await verifyPassword(password, user.password);
+  const isValidPassword = await verifyPassword(password, user.password as string);
   if (!isValidPassword) {
     throw new Error('Invalid email or password');
   }
 
   // Update last login
-  await db.user.update({
-    where: { id: user.id },
-    data: { lastLogin: new Date() },
-  });
+  await db.execute({
+    sql: 'UPDATE User SET lastLogin = ? WHERE id = ?',
+    args: [new Date().toISOString(), user.id]
+  })
 
   // Create session
-  const { token } = await createSession(user.id, userAgent, ipAddress);
+  const { token } = await createSession(user.id as string, userAgent, ipAddress);
 
   return {
     user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      schoolId: user.schoolId,
-      avatar: user.avatar,
+      id: user.id as string,
+      email: user.email as string,
+      name: user.name as string,
+      role: user.role as UserRole,
+      schoolId: user.schoolId as string | null,
+      avatar: user.avatar as string | null,
     },
     token,
   };
@@ -311,17 +328,8 @@ export function generateRandomCode(length: number = 6): string {
   return result;
 }
 
-export async function generateUniqueClassCode(): Promise<string> {
-  const db = getDb();
-  let code = generateRandomCode(6);
-  let attempts = 0;
-
-  while (attempts < 100) {
-    const existing = await db.class.findUnique({ where: { code } });
-    if (!existing) return code;
-    code = generateRandomCode(6);
-    attempts++;
-  }
-
-  throw new Error('Unable to generate unique class code');
+function generateCuid(): string {
+  const timestamp = Date.now().toString(36)
+  const random = Math.random().toString(36).substring(2, 10)
+  return `c${timestamp}${random}`
 }

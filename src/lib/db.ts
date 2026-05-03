@@ -1,76 +1,74 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
-import type { Client } from '@libsql/client'
 
-// Cache for the Prisma client
-let prismaClient: PrismaClient | null = null
-let libsqlClient: Client | null = null
+// DO NOT cache anything - create fresh on every call
+let callCount = 0
 
-/**
- * Creates a new Prisma client with the libsql adapter.
- * Reads environment variables at call time to ensure they're available.
- */
-export function createPrismaClient(): PrismaClient {
-  // Read env vars at function call time
+function createPrismaClient(): PrismaClient {
+  callCount++
+  const callId = callCount
+
+  console.log(`\n========== [DB CALL #${callId}] ==========`)
+  console.log('Time:', new Date().toISOString())
+
+  // Check process.env directly
+  const envKeys = Object.keys(process.env)
+  const dbKeys = envKeys.filter(k => k.includes('DATABASE'))
+
+  console.log('All DATABASE keys in process.env:', dbKeys)
+  console.log('process.env.DATABASE_URL:', process.env.DATABASE_URL)
+  console.log('process.env.DATABASE_AUTH_TOKEN:', process.env.DATABASE_AUTH_TOKEN ? `SET (${process.env.DATABASE_AUTH_TOKEN.length} chars)` : 'NOT SET')
+
+  // Read env vars
   const databaseUrl = process.env.DATABASE_URL
   const authToken = process.env.DATABASE_AUTH_TOKEN
 
-  console.log('[createPrismaClient] Checking environment variables...')
-  console.log('  DATABASE_URL:', databaseUrl ? `SET (${databaseUrl.length} chars, starts with: ${databaseUrl.substring(0, 30)}...)` : 'NOT SET')
-  console.log('  DATABASE_AUTH_TOKEN:', authToken ? `SET (${authToken.length} chars)` : 'NOT SET')
-
   if (!databaseUrl) {
-    const availableKeys = Object.keys(process.env).filter(k => k.includes('DATABASE')).join(', ') || 'NONE'
-    throw new Error(
-      `DATABASE_URL is not set. Available DATABASE keys: ${availableKeys}`
-    )
+    console.error(`[DB CALL #${callId}] ERROR: DATABASE_URL is undefined!`)
+    console.error('Available env keys:', envKeys.slice(0, 20).join(', '))
+    throw new Error(`DATABASE_URL is undefined. Keys with DATABASE: ${dbKeys.join(', ') || 'NONE'}`)
   }
 
   if (!authToken) {
-    throw new Error('DATABASE_AUTH_TOKEN is not set.')
+    console.error(`[DB CALL #${callId}] ERROR: DATABASE_AUTH_TOKEN is undefined!`)
+    throw new Error('DATABASE_AUTH_TOKEN is undefined')
   }
 
-  // Create libsql client
-  const libsql = createClient({
-    url: databaseUrl,
-    authToken: authToken,
-  })
+  console.log(`[DB CALL #${callId}] Creating libsql client with URL:`, databaseUrl.substring(0, 50) + '...')
 
-  // Create Prisma with libsql adapter
-  const adapter = new PrismaLibSQL(libsql)
-  return new PrismaClient({ adapter })
+  try {
+    const libsql = createClient({
+      url: databaseUrl,
+      authToken: authToken,
+    })
+
+    console.log(`[DB CALL #${callId}] libsql client created successfully`)
+
+    const adapter = new PrismaLibSQL(libsql)
+    console.log(`[DB CALL #${callId}] PrismaLibSQL adapter created`)
+
+    const client = new PrismaClient({ adapter })
+    console.log(`[DB CALL #${callId}] PrismaClient created successfully`)
+
+    return client
+  } catch (error) {
+    console.error(`[DB CALL #${callId}] Error creating client:`, error)
+    throw error
+  }
 }
 
-/**
- * Gets the Prisma client, creating it if necessary.
- * In development, caches the client for reuse.
- * In production, creates fresh client each time to ensure env vars are read.
- */
+// Export a function that creates fresh client every time
 export function getDb(): PrismaClient {
-  // In development, cache the client
-  if (process.env.NODE_ENV !== 'production' && prismaClient) {
-    return prismaClient
-  }
-
-  const client = createPrismaClient()
-
-  if (process.env.NODE_ENV !== 'production') {
-    prismaClient = client
-  }
-
-  return client
+  return createPrismaClient()
 }
 
-/**
- * For backward compatibility, export db as a PrismaClient-like object.
- * All property accesses are proxied to getDb() which reads env vars at call time.
- */
+// Export db that calls getDb on every property access
 export const db = new Proxy({} as PrismaClient, {
   get(target, prop: string) {
+    console.log(`[Proxy] Accessing property: ${prop}`)
     const client = getDb()
     const value = (client as any)[prop]
-    // Bind methods to the client to preserve `this` context
     if (typeof value === 'function') {
       return value.bind(client)
     }
