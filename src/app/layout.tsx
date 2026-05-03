@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   keywords: ["E-Classroom", "LMS", "Learning Management System", "SMZ Education", "Online Learning", "Education", "Schools", "Teachers", "Students"],
   authors: [{ name: "SMZ Education", url: "https://smzedu.com" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/favicon.png",
   },
   openGraph: {
     title: "E-Classroom | SMZ Education",
