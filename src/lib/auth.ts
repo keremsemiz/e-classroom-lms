@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { db } from './db';
+import { getDb } from './db';
 import { User, UserRole, Session } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'e-classroom-smz-education-secret-key-2024';
@@ -55,11 +55,13 @@ export function verifyToken(token: string): JWTPayload | null {
 // SESSION MANAGEMENT
 // ============================================
 
-export async function createSession(
+async function createSession(
   userId: string,
   userAgent?: string,
   ipAddress?: string
 ): Promise<{ session: Session; token: string }> {
+  const db = getDb();
+
   const user = await db.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true, role: true, schoolId: true },
@@ -93,6 +95,7 @@ export async function createSession(
 }
 
 export async function validateSession(token: string): Promise<AuthUser | null> {
+  const db = getDb();
   const payload = verifyToken(token);
   if (!payload) return null;
 
@@ -133,6 +136,7 @@ export async function validateSession(token: string): Promise<AuthUser | null> {
 }
 
 export async function invalidateSession(token: string): Promise<void> {
+  const db = getDb();
   try {
     await db.session.delete({ where: { token } });
   } catch {
@@ -141,6 +145,7 @@ export async function invalidateSession(token: string): Promise<void> {
 }
 
 export async function cleanupExpiredSessions(): Promise<void> {
+  const db = getDb();
   await db.session.deleteMany({
     where: {
       expiresAt: { lt: new Date() },
@@ -159,6 +164,8 @@ export async function registerUser(data: {
   role?: UserRole;
   schoolId?: string;
 }): Promise<{ user: AuthUser; token: string }> {
+  const db = getDb();
+
   // Check if user already exists
   const existingUser = await db.user.findUnique({
     where: { email: data.email.toLowerCase() },
@@ -204,6 +211,9 @@ export async function loginUser(
   userAgent?: string,
   ipAddress?: string
 ): Promise<{ user: AuthUser; token: string }> {
+  console.log('[loginUser] Starting login for:', email);
+  const db = getDb();
+
   const user = await db.user.findUnique({
     where: { email: email.toLowerCase() },
   });
@@ -279,8 +289,8 @@ export function canManageClass(user: AuthUser, classTeacherId: string): boolean 
 }
 
 export function canGrade(user: AuthUser): boolean {
-  return user.role === UserRole.TEACHER || 
-         user.role === UserRole.SCHOOL_ADMIN || 
+  return user.role === UserRole.TEACHER ||
+         user.role === UserRole.SCHOOL_ADMIN ||
          user.role === UserRole.SUPER_ADMIN;
 }
 
@@ -302,15 +312,16 @@ export function generateRandomCode(length: number = 6): string {
 }
 
 export async function generateUniqueClassCode(): Promise<string> {
+  const db = getDb();
   let code = generateRandomCode(6);
   let attempts = 0;
-  
+
   while (attempts < 100) {
     const existing = await db.class.findUnique({ where: { code } });
     if (!existing) return code;
     code = generateRandomCode(6);
     attempts++;
   }
-  
+
   throw new Error('Unable to generate unique class code');
 }
