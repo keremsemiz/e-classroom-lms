@@ -24,7 +24,7 @@ export interface AuthUser {
 }
 
 // Get database client
-function getDb() {
+export function getDb() {
   const databaseUrl = process.env.DATABASE_URL
   const authToken = process.env.DATABASE_AUTH_TOKEN
 
@@ -326,6 +326,24 @@ export function generateRandomCode(length: number = 6): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+export async function generateUniqueClassCode(): Promise<string> {
+  const db = getDb()
+  let code = generateRandomCode(6);
+  let attempts = 0;
+
+  while (attempts < 100) {
+    const result = await db.execute({
+      sql: 'SELECT id FROM Class WHERE code = ?',
+      args: [code]
+    })
+    if (result.rows.length === 0) return code;
+    code = generateRandomCode(6);
+    attempts++;
+  }
+
+  throw new Error('Unable to generate unique class code');
 }
 
 function generateCuid(): string {
