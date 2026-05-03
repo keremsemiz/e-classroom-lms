@@ -7,18 +7,30 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  // Check if using Turso (Vercel production)
-  if (process.env.DATABASE_URL?.startsWith('libsql://')) {
+  const databaseUrl = process.env.DATABASE_URL
+  const authToken = process.env.DATABASE_AUTH_TOKEN
+
+  // Debug: Log if URL is missing
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set!')
+  }
+
+  // Check if using Turso (libsql:// URL)
+  if (databaseUrl.startsWith('libsql://')) {
+    if (!authToken) {
+      throw new Error('DATABASE_AUTH_TOKEN is required for Turso!')
+    }
+    
     const libsql = createClient({
-      url: process.env.DATABASE_URL,
-      authToken: process.env.DATABASE_AUTH_TOKEN,
+      url: databaseUrl,
+      authToken: authToken,
     })
     const adapter = new PrismaLibSQL(libsql)
-    return new PrismaClient({ adapter, log: ['query'] })
+    return new PrismaClient({ adapter })
   }
   
-  // Local SQLite development
-  return new PrismaClient({ log: ['query'] })
+  // Local SQLite development (file:./prisma/dev.db)
+  return new PrismaClient()
 }
 
 export const db = globalForPrisma.prisma ?? createPrismaClient()
