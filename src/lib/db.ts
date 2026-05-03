@@ -1,61 +1,77 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
+import type { Client } from '@libsql/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  libsqlClient: Client | undefined
 }
 
-function createPrismaClient() {
+// Get env vars at CALL time, not module load time
+function getEnvVars() {
   const databaseUrl = process.env.DATABASE_URL
   const authToken = process.env.DATABASE_AUTH_TOKEN
 
-  // Debug: Check if environment variables are set
-  console.log('[DB Debug] DATABASE_URL set:', !!databaseUrl)
-  console.log('[DB Debug] DATABASE_AUTH_TOKEN set:', !!authToken)
+  return { databaseUrl, authToken }
+}
+
+// Create libsql client lazily
+function getLibsqlClient() {
+  if (globalForPrisma.libsqlClient) {
+    return globalForPrisma.libsqlClient
+  }
+
+  const { databaseUrl, authToken } = getEnvVars()
+
+  console.log('[DB] Creating libsql client...')
+  console.log('[DB] DATABASE_URL:', databaseUrl ? `${databaseUrl.substring(0, 30)}...` : 'UNDEFINED')
+  console.log('[DB] DATABASE_AUTH_TOKEN:', authToken ? `SET (${authToken.length} chars)` : 'UNDEFINED')
 
   if (!databaseUrl) {
-    throw new Error(
-      'DATABASE_URL environment variable is not set! ' +
-      'Please add DATABASE_URL to your Vercel project environment variables. ' +
-      'For Turso, use format: libsql://your-database.turso.io'
-    )
+    throw new Error('DATABASE_URL is not set. Please check Vercel environment variables.')
   }
 
-  // Turso/libsql connection
   if (!authToken) {
-    throw new Error(
-      'DATABASE_AUTH_TOKEN environment variable is not set! ' +
-      'Please add DATABASE_AUTH_TOKEN to your Vercel project environment variables. ' +
-      'You can find this in your Turso dashboard.'
-    )
+    throw new Error('DATABASE_AUTH_TOKEN is not set. Please check Vercel environment variables.')
   }
 
-  const libsql = createClient({
+  const client = createClient({
     url: databaseUrl,
     authToken: authToken,
   })
-  
-  const adapter = new PrismaLibSQL(libsql)
-  return new PrismaClient({ adapter })
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.libsqlClient = client
+  }
+
+  return client
 }
 
-// Create a singleton instance to prevent multiple connections in development
+// Create Prisma client lazily
 function getPrismaClient() {
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma
   }
-  
-  try {
-    const client = createPrismaClient()
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.prisma = client
-    }
-    return client
-  } catch (error) {
-    console.error('[DB Error] Failed to create Prisma client:', error)
-    throw error
+
+  console.log('[DB] Creating Prisma client...')
+
+  const libsql = getLibsqlClient()
+  const adapter = new PrismaLibSQL(libsql)
+  const client = new PrismaClient({ adapter })
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = client
   }
+
+  return client
 }
 
-export const db = getPrismaClient()
+// Export a getter function instead of the client directly
+// This ensures env vars are read at request time, not module load time
+export const db = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient()
+    return client[prop as keyof PrismaClient]
+  }
+}) as PrismaClient
