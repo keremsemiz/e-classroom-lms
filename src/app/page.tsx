@@ -314,7 +314,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
 }
 
 // ============================================
-// LOGIN FORM
+// LOGIN FORM - Professional Design
 // ============================================
 
 function LoginForm({ onSuccess, onSwitchToRegister }: { onSuccess: (user: AuthUser) => void; onSwitchToRegister: () => void }) {
@@ -342,69 +342,150 @@ function LoginForm({ onSuccess, onSwitchToRegister }: { onSuccess: (user: AuthUs
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl">
-      <CardHeader className="text-center">
-        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <GraduationCap className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ backgroundColor: '#0F2B4C' }}>
+        <img
+          src="/classroom-hero.png"
+          alt="Modern classroom"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B4C] via-[#0F2B4C]/80 to-transparent" />
+        <div className="relative z-10 flex flex-col justify-center p-12 text-white">
+          <div className="animate-fadeIn">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
+              <GraduationCap className="w-9 h-9 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold mb-4 leading-tight">
+              E-Classroom
+            </h1>
+            <p className="text-xl text-blue-100 mb-6">
+              Modern Learning Management for Schools Worldwide
+            </p>
+            <div className="space-y-4 text-blue-100/80">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <span>Manage classes and assignments</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <span>Connect teachers and students</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <span>Track progress and analytics</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-white/10">
+            <p className="text-sm text-blue-200/60">Trusted by 10,000+ schools worldwide</p>
+          </div>
         </div>
-        <CardTitle className="text-2xl">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your E-Classroom account</CardDescription>
-        <p className="text-xs text-muted-foreground mt-1">SMZ Education</p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                required
-              />
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-gray-900">
+        <div className="w-full max-w-md animate-fadeIn">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0F2B4C' }}>
+              <GraduationCap className="w-7 h-7 text-white" />
             </div>
+            <span className="ml-3 text-xl font-bold" style={{ color: '#0F2B4C' }}>E-Classroom</span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                required
-              />
-            </div>
+
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Sign in to your account</p>
           </div>
-          {error && (
-            <div className="text-sm text-red-500 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2 animate-slideUp animate-delay-100" style={{ opacity: 0 }}>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email address</Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@school.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                />
+              </div>
             </div>
-          )}
-          <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button variant="link" onClick={onSwitchToRegister}>
-          Don't have an account? Register
-        </Button>
-      </CardFooter>
-    </Card>
+
+            <div className="space-y-2 animate-slideUp animate-delay-200" style={{ opacity: 0 }}>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-500 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg animate-fadeIn">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-white font-medium rounded-lg btn-professional animate-slideUp animate-delay-300"
+              style={{ backgroundColor: '#0F2B4C' }}
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-8 text-center animate-slideUp animate-delay-400" style={{ opacity: 0 }}>
+            <p className="text-gray-500 dark:text-gray-400">
+              Don't have an account?{' '}
+              <button
+                onClick={onSwitchToRegister}
+                className="font-medium hover:underline"
+                style={{ color: '#1E4D7B' }}
+              >
+                Create one
+              </button>
+            </p>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+            <p className="text-xs text-gray-400">A product of SMZ Education</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 // ============================================
-// REGISTER FORM
+// REGISTER FORM - Professional Design
 // ============================================
 
 function RegisterForm({ onSuccess, onSwitchToLogin }: { onSuccess: (user: AuthUser) => void; onSwitchToLogin: () => void }) {
@@ -441,106 +522,190 @@ function RegisterForm({ onSuccess, onSwitchToLogin }: { onSuccess: (user: AuthUs
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl">
-      <CardHeader className="text-center">
-        <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <UserPlus className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ backgroundColor: '#0F2B4C' }}>
+        <img
+          src="/classroom-hero.png"
+          alt="Modern classroom"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B4C] via-[#0F2B4C]/80 to-transparent" />
+        <div className="relative z-10 flex flex-col justify-center p-12 text-white">
+          <div className="animate-fadeIn">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
+              <GraduationCap className="w-9 h-9 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold mb-4 leading-tight">
+              Join E-Classroom
+            </h1>
+            <p className="text-xl text-blue-100 mb-6">
+              Start your learning journey today
+            </p>
+            <div className="space-y-4 text-blue-100/80">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+                <span>Free for all schools</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+                <span>Easy setup in minutes</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+                <span>Access from anywhere</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-white/10">
+            <p className="text-sm text-blue-200/60">Join 500,000+ students and teachers</p>
+          </div>
         </div>
-        <CardTitle className="text-2xl">Create Account</CardTitle>
-        <CardDescription>Join E-Classroom today</CardDescription>
-        <p className="text-xs text-muted-foreground mt-1">SMZ Education</p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="name"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="pl-10"
-                required
-              />
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-gray-900 overflow-y-auto">
+        <div className="w-full max-w-md animate-fadeIn py-8">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0F2B4C' }}>
+              <GraduationCap className="w-7 h-7 text-white" />
             </div>
+            <span className="ml-3 text-xl font-bold" style={{ color: '#0F2B4C' }}>E-Classroom</span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                required
-              />
+
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Join E-Classroom today</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2 animate-slideUp animate-delay-100" style={{ opacity: 0 }}>
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</Label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="name"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">I am a</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="STUDENT">Student</SelectItem>
-                <SelectItem value="TEACHER">Teacher</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                required
-                minLength={6}
-              />
+
+            <div className="space-y-2 animate-slideUp animate-delay-100" style={{ opacity: 0 }}>
+              <Label htmlFor="reg-email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email address</Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="reg-email"
+                  type="email"
+                  placeholder="you@school.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10"
-                required
-              />
+
+            <div className="space-y-2 animate-slideUp animate-delay-200" style={{ opacity: 0 }}>
+              <Label htmlFor="role" className="text-sm font-medium text-gray-700 dark:text-gray-300">I am a</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+                <SelectTrigger className="h-12 input-professional border-gray-200 dark:border-gray-700 rounded-lg">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="TEACHER">Teacher</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          {error && (
-            <div className="text-sm text-red-500 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
+
+            <div className="space-y-2 animate-slideUp animate-delay-200" style={{ opacity: 0 }}>
+              <Label htmlFor="reg-password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="reg-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                  minLength={6}
+                />
+              </div>
             </div>
-          )}
-          <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button variant="link" onClick={onSwitchToLogin}>
-          Already have an account? Sign In
-        </Button>
-      </CardFooter>
-    </Card>
+
+            <div className="space-y-2 animate-slideUp animate-delay-300" style={{ opacity: 0 }}>
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-12 h-12 input-professional border-gray-200 dark:border-gray-700 focus:border-[#1E4D7B] rounded-lg"
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-500 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg animate-fadeIn">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-white font-medium rounded-lg btn-professional animate-slideUp animate-delay-400"
+              style={{ backgroundColor: '#0F2B4C' }}
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center animate-slideUp animate-delay-400" style={{ opacity: 0 }}>
+            <p className="text-gray-500 dark:text-gray-400">
+              Already have an account?{' '}
+              <button
+                onClick={onSwitchToLogin}
+                className="font-medium hover:underline"
+                style={{ color: '#1E4D7B' }}
+              >
+                Sign in
+              </button>
+            </p>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+            <p className="text-xs text-gray-400">A product of SMZ Education</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3526,29 +3691,25 @@ export default function EClassroomApp() {
   if (!isAuthenticated) {
     if (view === 'login') {
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-          <LoginForm
-            onSuccess={(u) => {
-              login(u, 'session');
-              handleViewChange('dashboard');
-            }}
-            onSwitchToRegister={() => handleViewChange('register')}
-          />
-        </div>
+        <LoginForm
+          onSuccess={(u) => {
+            login(u, 'session');
+            handleViewChange('dashboard');
+          }}
+          onSwitchToRegister={() => handleViewChange('register')}
+        />
       );
     }
 
     if (view === 'register') {
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
-          <RegisterForm
-            onSuccess={(u) => {
-              login(u, 'session');
-              handleViewChange('dashboard');
-            }}
-            onSwitchToLogin={() => handleViewChange('login')}
-          />
-        </div>
+        <RegisterForm
+          onSuccess={(u) => {
+            login(u, 'session');
+            handleViewChange('dashboard');
+          }}
+          onSwitchToLogin={() => handleViewChange('login')}
+        />
       );
     }
 
