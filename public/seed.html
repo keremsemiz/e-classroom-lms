@@ -1,375 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Database Seeding - E-Classroom SMZ Education</title>
+  <title>SMZ Education - Database Seeding</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0F2B4C 0%, #1E4D7B 100%);
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 20px;
+      color: #f8fafc;
     }
+
     .container {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      max-width: 600px;
-      width: 100%;
-      padding: 40px;
+      max-width: 1000px;
+      margin: 0 auto;
     }
-    h1 { color: #0F2B4C; margin-bottom: 8px; }
-    .subtitle { color: #666; margin-bottom: 30px; }
-    .status-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+      color: #60a5fa;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
       border-radius: 12px;
-      padding: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card h2 {
+      margin-bottom: 16px;
+      color: #60a5fa;
+      font-size: 20px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
       margin-bottom: 20px;
     }
-    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 2.5rem; font-weight: bold; color: #0F2B4C; }
-    .stat-label { color: #64748b; font-size: 0.875rem; }
-    .progress-bar {
-      background: #e2e8f0;
-      border-radius: 8px;
-      height: 12px;
-      overflow: hidden;
-      margin: 20px 0;
-    }
-    .progress-fill {
-      background: linear-gradient(90deg, #10b981, #059669);
-      height: 100%;
-      transition: width 0.3s ease;
-    }
-    .btn {
-      background: #0F2B4C;
-      color: white;
-      border: none;
-      padding: 16px 32px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      width: 100%;
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-    .btn:hover { background: #1E4D7B; }
-    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
-    .btn-danger { background: #dc2626; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-success { background: #10b981; }
-    .btn-success:hover { background: #059669; }
-    .log {
-      background: #1e293b;
-      color: #10b981;
-      font-family: 'Monaco', 'Consolas', monospace;
-      font-size: 0.75rem;
+
+    .stat-box {
+      background: rgba(0, 0, 0, 0.2);
       padding: 16px;
       border-radius: 8px;
-      max-height: 250px;
-      overflow-y: auto;
-      margin-top: 20px;
-      white-space: pre-wrap;
-    }
-    .log-error { color: #ef4444; }
-    .log-info { color: #60a5fa; }
-    .log-warning { color: #fbbf24; }
-    .alert {
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
       text-align: center;
     }
-    .alert-warning {
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      color: #92400e;
+
+    .stat-box .value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #34d399;
     }
-    .alert-success {
-      background: #d1fae5;
-      border: 1px solid #10b981;
-      color: #065f46;
+
+    .stat-box .label {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 4px;
     }
-    .alert-info {
-      background: #dbeafe;
-      border: 1px solid #3b82f6;
-      color: #1e40af;
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
     }
-    .hidden { display: none; }
-    .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff40;
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-right: 8px;
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .info-box {
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: white;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .log {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .log-entry.success {
+      color: #34d399;
+    }
+
+    .log-entry.error {
+      color: #f87171;
+    }
+
+    .log-entry.info {
+      color: #60a5fa;
+    }
+
+    .log-entry.warning {
+      color: #fbbf24;
+    }
+
+    .schools-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .schools-table th,
+    .schools-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .schools-table th {
+      background: rgba(0, 0, 0, 0.3);
+      font-weight: 600;
+    }
+
+    .schools-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      transition: width 0.3s;
+    }
+
+    .warning-box {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 20px;
     }
-    .info-box h3 { color: #0369a1; margin-bottom: 8px; }
-    .info-box p { color: #0c4a6e; font-size: 0.875rem; margin: 4px 0; }
+
+    .warning-box h3 {
+      color: #f87171;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>🌱 Database Seeding</h1>
-    <p class="subtitle">E-Classroom LMS - SMZ Education Network</p>
-    
-    <div id="alertBox" class="alert alert-info hidden"></div>
-    
-    <div class="status-card">
-      <div class="status-grid">
-        <div class="stat">
-          <div class="stat-value" id="currentSchools">-</div>
-          <div class="stat-label">Schools</div>
+    <h1>SMZ Education - Database Seeding Tool</h1>
+
+    <div class="card">
+      <h2>Current Status</h2>
+      <div class="status-grid" id="statusGrid">
+        <div class="stat-box">
+          <div class="value" id="schoolCount">-</div>
+          <div class="label">Schools</div>
         </div>
-        <div class="stat">
-          <div class="stat-value" id="currentUsers">-</div>
-          <div class="stat-label">Users</div>
+        <div class="stat-box">
+          <div class="value" id="userCount">-</div>
+          <div class="label">Total Users</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="usersWithSchool">-</div>
+          <div class="label">Users with School</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="targetUsers">34,640</div>
+          <div class="label">Target Users</div>
         </div>
       </div>
+      <button class="btn btn-primary" onclick="refreshStatus()">Refresh Status</button>
+    </div>
+
+    <div class="warning-box">
+      <h3>Warning: Fresh Start</h3>
+      <p>This will DELETE ALL DATA and start fresh. Only use this if you want to completely reset the database.</p>
+      <button class="btn btn-danger" onclick="freshStart()" id="btnFreshStart">Fresh Start (Wipe All Data)</button>
+    </div>
+
+    <div class="card">
+      <h2>Seeding Controls</h2>
+      <p style="margin-bottom: 16px; color: #94a3b8;">Follow these steps in order:</p>
+      <button class="btn btn-primary" onclick="seedSchools()" id="btnSeedSchools">1. Create Schools (39)</button>
+      <button class="btn btn-success" onclick="seedAllUsers()" id="btnSeedUsers">2. Seed All Users (~34,640)</button>
+      <button class="btn btn-primary" onclick="fixUsers()" id="btnFixUsers">3. Fix Missing School IDs</button>
       <div class="progress-bar">
-        <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
       </div>
-      <p style="text-align: center; color: #64748b;" id="progressText">Checking database...</p>
+      <p id="progressText" style="margin-top: 10px; color: #94a3b8;"></p>
     </div>
 
-    <div class="info-box">
-      <h3>📊 Target Data</h3>
-      <p>• <strong>39 Schools</strong> across Ghana & Senegal</p>
-      <p>• <strong>~34,640 Users</strong> (admins, teachers, students)</p>
-      <p>• <strong>Default password:</strong> <code>password123</code></p>
+    <div class="card">
+      <h2>Schools Overview</h2>
+      <table class="schools-table" id="schoolsTable">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>School Name</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody id="schoolsBody">
+          <tr>
+            <td colspan="3" style="text-align: center;">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div id="stepInitial">
-      <button class="btn btn-danger" id="btnFreshStart" onclick="freshStart()">
-        🔄 Fresh Start (Wipe & Reset Everything)
-      </button>
-      <button class="btn btn-success hidden" id="btnContinue" onclick="continueSeeding()">
-        ▶️ Continue Seeding Users
-      </button>
+    <div class="card">
+      <h2>Activity Log</h2>
+      <div class="log" id="logContainer"></div>
     </div>
-
-    <div id="stepSeeding" class="hidden">
-      <button class="btn" disabled id="btnSeeding">
-        <span class="spinner"></span> Seeding in progress...
-      </button>
-    </div>
-
-    <div id="stepComplete" class="hidden">
-      <div class="alert alert-success">
-        <strong>🎉 Seeding Complete!</strong><br>
-        All 39 schools and ~34,640 users have been created.<br>
-        Default password: <code>password123</code>
-      </div>
-      <a href="/" class="btn" style="display: block; text-align: center; text-decoration: none;">
-        Go to Dashboard →
-      </a>
-    </div>
-
-    <div class="log" id="logBox">Ready...</div>
   </div>
 
   <script>
     const API = '/api/seed-batch';
-    let seedingState = { isRunning: false };
-    
-    function log(msg, type = '') {
-      const logBox = document.getElementById('logBox');
-      const timestamp = new Date().toLocaleTimeString();
-      const colorClass = type === 'error' ? 'log-error' : type === 'info' ? 'log-info' : type === 'warning' ? 'log-warning' : '';
-      logBox.innerHTML += `<span class="${colorClass}">[${timestamp}] ${msg}</span>\n`;
-      logBox.scrollTop = logBox.scrollHeight;
+    let isSeeding = false;
+
+    function log(message, type = 'info') {
+      const container = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      container.insertBefore(entry, container.firstChild);
     }
 
-    function showAlert(msg, type = 'info') {
-      const alertBox = document.getElementById('alertBox');
-      alertBox.className = `alert alert-${type}`;
-      alertBox.innerHTML = msg;
-      alertBox.classList.remove('hidden');
+    function updateProgress(current, total) {
+      const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+      document.getElementById('progressFill').style.width = `${percent}%`;
+      document.getElementById('progressText').textContent = `${current.toLocaleString()} / ${total.toLocaleString()} (${percent}%)`;
     }
 
-    function hideAlert() {
-      document.getElementById('alertBox').classList.add('hidden');
-    }
-
-    function updateProgress(current, total, label) {
-      const percent = Math.round((current / total) * 100);
-      document.getElementById('progressBar').style.width = percent + '%';
-      document.getElementById('progressText').textContent = `${label}: ${current.toLocaleString()} / ${total.toLocaleString()} (${percent}%)`;
-    }
-
-    async function fetchAPI(params) {
-      const url = `${API}?${new URLSearchParams(params)}`;
-      log(`→ GET ${url}`, 'info');
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.error) {
-        log(`✗ Error: ${data.error}`, 'error');
-      } else {
-        log(`✓ Success: ${data.action || 'ok'}`);
-      }
-      return data;
-    }
-
-    async function checkStatus() {
+    async function refreshStatus() {
       try {
-        const data = await fetchAPI({ action: 'status' });
+        log('Fetching status...', 'info');
+        const response = await fetch(`${API}?action=status`);
+        const data = await response.json();
+
         if (data.success) {
-          document.getElementById('currentSchools').textContent = data.currentSchools;
-          document.getElementById('currentUsers').textContent = data.currentUsers.toLocaleString();
-          
-          const totalTargetUsers = 34640;
-          updateProgress(data.currentUsers, totalTargetUsers, 'Users');
-          
-          // Show appropriate buttons
-          document.getElementById('stepInitial').classList.remove('hidden');
-          document.getElementById('stepSeeding').classList.add('hidden');
-          document.getElementById('stepComplete').classList.add('hidden');
-          
-          if (data.currentSchools === 0 && data.currentUsers === 0) {
-            // Fresh database
-            showAlert('Database is empty. Click "Fresh Start" to begin.', 'info');
-            document.getElementById('btnFreshStart').classList.remove('hidden');
-            document.getElementById('btnContinue').classList.add('hidden');
-          } else if (data.currentSchools < 39) {
-            // Partial schools
-            showAlert(`⚠️ Only ${data.currentSchools}/39 schools exist. Click "Fresh Start" to reset.`, 'warning');
-            document.getElementById('btnFreshStart').classList.remove('hidden');
-            document.getElementById('btnContinue').classList.add('hidden');
-          } else if (data.currentUsers < totalTargetUsers) {
-            // Schools complete, need more users
-            showAlert(`${data.currentUsers.toLocaleString()} users exist. Continue seeding or fresh start.`, 'info');
-            document.getElementById('btnFreshStart').classList.remove('hidden');
-            document.getElementById('btnContinue').classList.remove('hidden');
+          document.getElementById('schoolCount').textContent = data.status.totalSchools;
+          document.getElementById('userCount').textContent = data.status.totalUsers?.toLocaleString() || '0';
+          document.getElementById('usersWithSchool').textContent = data.status.usersWithSchool?.toLocaleString() || '0';
+
+          // Update schools table
+          const tbody = document.getElementById('schoolsBody');
+          if (data.status.usersBySchool && data.status.usersBySchool.length > 0) {
+            tbody.innerHTML = data.status.usersBySchool.map(s => `
+              <tr>
+                <td>${s.code}</td>
+                <td>${s.name}</td>
+                <td>${s.userCount}</td>
+              </tr>
+            `).join('');
           } else {
-            // Complete!
-            showComplete();
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No schools with users yet</td></tr>';
           }
-          
-          // Warn about NULL schoolId users
-          if (data.nullSchoolUsers > 0) {
-            log(`⚠️ WARNING: ${data.nullSchoolUsers} users have NULL schoolId`, 'warning');
-          }
+
+          log(`Status: ${data.status.totalSchools} schools, ${data.status.totalUsers} users`, 'success');
+        } else {
+          log(`Error: ${data.error}`, 'error');
         }
-        return data;
-      } catch (e) {
-        log('Error checking status: ' + e.message, 'error');
-        return null;
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
       }
-    }
-
-    function showSeeding() {
-      document.getElementById('stepInitial').classList.add('hidden');
-      document.getElementById('stepSeeding').classList.remove('hidden');
-      document.getElementById('stepComplete').classList.add('hidden');
-    }
-
-    function showComplete() {
-      document.getElementById('stepInitial').classList.add('hidden');
-      document.getElementById('stepSeeding').classList.add('hidden');
-      document.getElementById('stepComplete').classList.remove('hidden');
-      showAlert('🎉 All done! Database is fully seeded.', 'success');
     }
 
     async function freshStart() {
-      if (!confirm('⚠️ This will DELETE ALL DATA and start fresh. Continue?')) return;
-      
-      showSeeding();
-      log('🔄 Starting fresh...', 'info');
-      hideAlert();
-      
-      // Step 1: Fresh start (wipe + create schools)
-      const freshData = await fetchAPI({ action: 'fresh-start' });
-      if (!freshData.success) {
-        showAlert(`Error: ${freshData.error}`, 'warning');
-        await checkStatus();
-        return;
-      }
-      
-      log(`✅ ${freshData.message}`, 'info');
-      await checkStatus();
-      
-      // Step 2: Start auto-seeding users
-      await autoSeed();
-    }
+      if (!confirm('This will DELETE ALL DATA. Are you sure?')) return;
 
-    async function continueSeeding() {
-      showSeeding();
-      await autoSeed();
-    }
+      try {
+        log('Starting fresh wipe...', 'warning');
+        document.getElementById('btnFreshStart').disabled = true;
 
-    async function autoSeed() {
-      if (seedingState.isRunning) return;
-      seedingState.isRunning = true;
-      
-      log('🚀 Auto-seeding users...', 'info');
-      
-      let schoolIndex = 0;
-      let userOffset = 0;
-      let complete = false;
-      
-      while (!complete && seedingState.isRunning) {
-        const data = await fetchAPI({ 
-          action: 'seed-users', 
-          schoolIndex, 
-          userOffset,
-          userBatch: 200
-        });
-        
-        if (!data.success) {
+        const response = await fetch(`${API}?action=fresh-start`);
+        const data = await response.json();
+
+        if (data.success) {
+          log('Fresh start complete! All data wiped.', 'success');
+          log(`Admin credentials: ${data.adminCredentials.email} / ${data.adminCredentials.password}`, 'info');
+        } else {
           log(`Error: ${data.error}`, 'error');
-          break;
         }
-        
-        if (data.complete) {
-          complete = true;
-          log('🎉 Seeding complete!', 'info');
-          showComplete();
-          break;
+
+        document.getElementById('btnFreshStart').disabled = false;
+        refreshStatus();
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        document.getElementById('btnFreshStart').disabled = false;
+      }
+    }
+
+    async function seedSchools() {
+      try {
+        log('Creating schools...', 'info');
+        document.getElementById('btnSeedSchools').disabled = true;
+
+        const response = await fetch(`${API}?action=seed-schools`);
+        const data = await response.json();
+
+        if (data.success) {
+          log(`Schools created: ${data.schoolsCreated}, Existing: ${data.schoolsExisting}`, 'success');
+        } else {
+          log(`Error: ${data.error}`, 'error');
         }
-        
-        // Update progress
-        if (data.progress) {
-          const status = await fetchAPI({ action: 'status' });
-          if (status.success) {
-            document.getElementById('currentUsers').textContent = status.currentUsers.toLocaleString();
-            updateProgress(status.currentUsers, 34640, 'Users');
+
+        document.getElementById('btnSeedSchools').disabled = false;
+        refreshStatus();
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        document.getElementById('btnSeedSchools').disabled = false;
+      }
+    }
+
+    async function seedAllUsers() {
+      if (isSeeding) return;
+      isSeeding = true;
+
+      const btn = document.getElementById('btnSeedUsers');
+      btn.disabled = true;
+      btn.textContent = 'Seeding in progress...';
+
+      const batchSize = 200;
+      let offset = 0;
+      let totalCreated = 0;
+      let totalSkipped = 0;
+      let hasMore = true;
+
+      const targetUsers = 34640;
+
+      try {
+        log('Starting user seeding...', 'info');
+
+        while (hasMore) {
+          const response = await fetch(`${API}?action=seed-users&batch=${batchSize}&offset=${offset}`);
+          const data = await response.json();
+
+          if (!data.success) {
+            log(`Error: ${data.error}`, 'error');
+            break;
+          }
+
+          totalCreated += data.batch.created;
+          totalSkipped += data.batch.skipped;
+          offset += batchSize;
+          hasMore = data.hasMore;
+
+          updateProgress(data.totals.usersWithSchool || totalCreated, targetUsers);
+          log(`Batch: ${data.batch.created} created, ${data.batch.skipped} skipped. Total users: ${data.totals.totalUsers}`, 'info');
+
+          // Small delay between batches
+          if (hasMore) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         }
-        
-        // Next step
-        if (data.nextStep) {
-          schoolIndex = data.nextStep.schoolIndex ?? schoolIndex;
-          userOffset = data.nextStep.userOffset ?? 0;
-        }
-        
-        // Small delay to prevent overwhelming
-        await new Promise(r => setTimeout(r, 50));
+
+        log(`Seeding complete! Created: ${totalCreated}, Skipped: ${totalSkipped}`, 'success');
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
       }
-      
-      seedingState.isRunning = false;
-      await checkStatus();
+
+      btn.disabled = false;
+      btn.textContent = '2. Seed All Users (~34,640)';
+      isSeeding = false;
+      refreshStatus();
     }
 
-    // Initialize on load
-    checkStatus();
+    async function fixUsers() {
+      try {
+        log('Fixing users with missing school IDs...', 'info');
+        document.getElementById('btnFixUsers').disabled = true;
+
+        const response = await fetch(`${API}?action=fix-users`);
+        const data = await response.json();
+
+        if (data.success) {
+          log(`Fixed ${data.fixed} users. Not found: ${data.notFound}`, 'success');
+        } else {
+          log(`Error: ${data.error}`, 'error');
+        }
+
+        document.getElementById('btnFixUsers').disabled = false;
+        refreshStatus();
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+        document.getElementById('btnFixUsers').disabled = false;
+      }
+    }
+
+    // Load status on page load
+    refreshStatus();
   </script>
 </body>
+
 </html>
