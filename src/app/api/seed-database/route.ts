@@ -45,7 +45,7 @@ const SCHOOLS = [
   { name: "École Bilingue Shiloh Académie", code: "EBSA", location: "Gandigal-Est, Senegal", type: "Bilingual" },
 ]
 
-// Ghanaian/Senegalese/West African names for realistic data - Extended lists for variety
+// Extended West African names for variety
 const FIRST_NAMES_MALE = [
   // Akan day names (Ghana)
   "Kwame", "Kofi", "Kwesi", "Yaw", "Kojo", "Kwabena", "Kwaku", "Akwasi", "Yao", "Kwasi",
@@ -76,7 +76,6 @@ const FIRST_NAMES_MALE = [
   "Chinedu", "Obinna", "Uche", "Nnamdi", "Ekene", "Emmanuel", "Tunde", "Bayo", "Tobi", "Seyi",
   "Kunle", "Wale", "Dele", "Fola", "Tayo", "Remi", "Biodun", "Yinka", "Sola", "Bunmi",
   // Other West African names
-  "Kwesi", "Kwabena", "Yaw", "Kojo", "Kofi", "Kwame", "Akwasi", "Kwaku", "Akwasi", "Kwasi",
   "Nana", "Ohene", "Osei", "Opoku", "Ofori", "Owusu", "Asante", "Mensah", "Boateng", "Amponsah"
 ]
 
@@ -135,7 +134,7 @@ const LAST_NAMES = [
   // Senegalese/Wolof names
   "Diouf", "Ndiaye", "Fall", "Sow", "Ba", "Gueye", "Seck", "Diallo", "Niang", "Thiam",
   "Mbaye", "Sarr", "Diao", "Sy", "Ndao", "Kane", "Cisse", "Toure", "Gomis", "Faye",
-  "Diop", "N'daw", "Sene", "Gaye", "Jallow", "Jammeh", "Mbow", "Samb", "Goudiaby", "Badji",
+  "Diop", "Ndaw", "Sene", "Gaye", "Jallow", "Jammeh", "Mbow", "Samb", "Goudiaby", "Badji",
   "Coly", "Sonko", "Drammeh", "Jatta", "Saho", "Jobe", "Manga", "Jorbateh", "Bojang", "Manneh",
   // Nigerian names
   "Adeyemi", "Adeoye", "Adesina", "Adewale", "Adebowale", "Adebayo", "Adegoke", "Adelakun", "Adeniyi", "Adeleke",
@@ -143,15 +142,18 @@ const LAST_NAMES = [
   "Chukwuemeka", "Nwosu", "Okafor", "Okeke", "Onyeka", "Onyema", "Onyekachi", "Onyebuchi", "Onyedinma", "Onyenwe",
   "Eze", "Ezejiofor", "Ezenwa", "Igwe", "Igwealor", "Ibekwe", "Ibezim", "Ibe", "Ibegbu", "Ibeji",
   // Other West African names
-  "Kone", "Traore", "Coulibaly", "Keita", "Diarra", "Sissoko", "Konate", "Diarra", "Toure", "Sangare",
-  "Bamba", "Ouedraogo", "Zongo", "Sawadogo", "Compaore", "Dabo", "Diallo", "Barry", "Sylla", "Konneh"
+  "Kone", "Traore", "Coulibaly", "Keita", "Diarra", "Sissoko", "Konate", "Toure", "Sangare",
+  "Bamba", "Ouedraogo", "Zongo", "Sawadogo", "Compaore", "Dabo", "Barry", "Sylla", "Konneh"
 ]
+
+let idCounter = 0
 
 // Generate a unique ID
 function generateId(): string {
+  idCounter++
   const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 8)
-  return `c${timestamp}${random}`
+  const random = Math.random().toString(36).substring(2, 6)
+  return `c${timestamp}${random}${idCounter}`
 }
 
 // Generate random Ghanaian phone number
@@ -164,7 +166,7 @@ function randomPhone(): string {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const batchSize = parseInt(searchParams.get('batch') || '50') // Smaller batches for Turso
+  const batchSize = parseInt(searchParams.get('batch') || '25') // Smaller batches for Turso
   const schoolIndex = parseInt(searchParams.get('school') || '-1') // -1 means all schools
   
   const databaseUrl = process.env.DATABASE_URL
@@ -186,28 +188,26 @@ export async function GET(request: Request) {
     console.log('[seed-database] Starting seeding process...')
     const startTime = Date.now()
 
-    // Check if schools already exist
-    const existingSchools = await db.execute("SELECT COUNT(*) as count FROM School")
-    const schoolCount = existingSchools.rows[0]?.count as number
-
-    if (schoolCount > 0) {
-      // Clear existing data (optional - comment out if you want to keep existing)
-      console.log('[seed-database] Clearing existing data...')
-      await db.execute("DELETE FROM Enrollment")
-      await db.execute("DELETE FROM Attendance")
-      await db.execute("DELETE FROM Grade")
-      await db.execute("DELETE FROM Submission")
-      await db.execute("DELETE FROM Assignment")
-      await db.execute("DELETE FROM Announcement")
-      await db.execute("DELETE FROM Message")
-      await db.execute("DELETE FROM Notification")
-      await db.execute("DELETE FROM Session")
-      await db.execute("DELETE FROM File")
-      await db.execute("DELETE FROM Schedule")
-      await db.execute("DELETE FROM Class")
-      await db.execute("DELETE FROM User WHERE role != 'SUPER_ADMIN'")
-      await db.execute("DELETE FROM School")
-    }
+    // ALWAYS clear existing data first (in correct order to respect foreign keys)
+    console.log('[seed-database] Clearing existing data...')
+    
+    // Delete in order: child tables first, then parent tables
+    await db.execute("DELETE FROM Grade")
+    await db.execute("DELETE FROM Submission")
+    await db.execute("DELETE FROM Attendance")
+    await db.execute("DELETE FROM Enrollment")
+    await db.execute("DELETE FROM Assignment")
+    await db.execute("DELETE FROM Announcement")
+    await db.execute("DELETE FROM Message")
+    await db.execute("DELETE FROM Notification")
+    await db.execute("DELETE FROM Session")
+    await db.execute("DELETE FROM File")
+    await db.execute("DELETE FROM Schedule")
+    await db.execute("DELETE FROM Class")
+    await db.execute("DELETE FROM User WHERE role != 'SUPER_ADMIN'")
+    await db.execute("DELETE FROM School")
+    
+    console.log('[seed-database] Existing data cleared')
 
     // Hash password for all users (same password for demo)
     const hashedPassword = await bcrypt.hash('password123', 12)
@@ -230,33 +230,43 @@ export async function GET(request: Request) {
       
       // Create school
       const schoolId = generateId()
-      await db.execute({
-        sql: `INSERT INTO School (id, name, code, address, email, isActive, description)
-              VALUES (?, ?, ?, ?, ?, 1, ?)`,
-        args: [
-          schoolId,
-          schoolData.name,
-          schoolData.code,
-          schoolData.location,
-          `info@${schoolData.code.toLowerCase()}.smzedu.com`,
-          `${schoolData.type} - Partner of SMZ Education Network`
-        ]
-      })
+      
+      try {
+        await db.execute({
+          sql: `INSERT INTO School (id, name, code, address, email, isActive, description)
+                VALUES (?, ?, ?, ?, ?, 1, ?)`,
+          args: [
+            schoolId,
+            schoolData.name,
+            schoolData.code,
+            schoolData.location,
+            `info@${schoolData.code.toLowerCase()}.smzedu.com`,
+            `${schoolData.type} - Partner of SMZ Education Network`
+          ]
+        })
+        console.log(`[seed-database] School inserted: ${schoolData.code} (ID: ${schoolId})`)
+      } catch (schoolError) {
+        console.error(`[seed-database] Failed to insert school ${schoolData.code}:`, schoolError)
+        throw schoolError
+      }
 
       // Determine user counts based on school type
-      // GARDCCA is special - it's an association with 1000+ schools
       const isGARDCCA = schoolData.code === 'GARDCCA'
-      const baseUsers = isGARDCCA ? 1200 : 880 // ~880 users per school to get ~34,500 total
+      const baseUsers = isGARDCCA ? 1200 : 880
       
-      // User distribution: ~5% teachers, ~1.5% admins, rest students
-      const teacherCount = Math.floor(baseUsers * 0.05) // ~44 teachers
-      const adminCount = Math.floor(baseUsers * 0.015) // ~13 admins
-      const studentCount = baseUsers - teacherCount - adminCount // ~823 students
+      const teacherCount = Math.floor(baseUsers * 0.05)
+      const adminCount = Math.floor(baseUsers * 0.015)
+      const studentCount = baseUsers - teacherCount - adminCount
 
-      // Create users in batches to avoid memory issues
-      const adminUsers: Array<{id: string, email: string, name: string}> = []
-      const teacherUsers: Array<{id: string, email: string, name: string}> = []
-      const studentUsers: Array<{id: string, email: string, name: string}> = []
+      // Generate all users for this school
+      const allUsers: Array<{
+        id: string
+        email: string
+        name: string
+        role: string
+        isActive: number
+        isVerified: number
+      }> = []
 
       // Create School Admins
       for (let i = 0; i < adminCount; i++) {
@@ -264,11 +274,15 @@ export async function GET(request: Request) {
           ? FIRST_NAMES_MALE[Math.floor(Math.random() * FIRST_NAMES_MALE.length)]
           : FIRST_NAMES_FEMALE[Math.floor(Math.random() * FIRST_NAMES_FEMALE.length)]
         const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]
-        const id = generateId()
-        const email = `admin${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`
-        const name = `${firstName} ${lastName}`
         
-        adminUsers.push({ id, email, name })
+        allUsers.push({
+          id: generateId(),
+          email: `admin${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`,
+          name: `${firstName} ${lastName}`,
+          role: 'SCHOOL_ADMIN',
+          isActive: 1,
+          isVerified: 1
+        })
       }
 
       // Create Teachers
@@ -277,11 +291,15 @@ export async function GET(request: Request) {
           ? FIRST_NAMES_MALE[Math.floor(Math.random() * FIRST_NAMES_MALE.length)]
           : FIRST_NAMES_FEMALE[Math.floor(Math.random() * FIRST_NAMES_FEMALE.length)]
         const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]
-        const id = generateId()
-        const email = `teacher${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`
-        const name = `${firstName} ${lastName}`
         
-        teacherUsers.push({ id, email, name })
+        allUsers.push({
+          id: generateId(),
+          email: `teacher${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`,
+          name: `${firstName} ${lastName}`,
+          role: 'TEACHER',
+          isActive: 1,
+          isVerified: Math.random() > 0.1 ? 1 : 0
+        })
       }
 
       // Create Students
@@ -290,36 +308,39 @@ export async function GET(request: Request) {
           ? FIRST_NAMES_MALE[Math.floor(Math.random() * FIRST_NAMES_MALE.length)]
           : FIRST_NAMES_FEMALE[Math.floor(Math.random() * FIRST_NAMES_FEMALE.length)]
         const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]
-        const id = generateId()
-        const email = `student${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`
-        const name = `${firstName} ${lastName}`
         
-        studentUsers.push({ id, email, name })
+        allUsers.push({
+          id: generateId(),
+          email: `student${i + 1}.${schoolData.code.toLowerCase()}@smzedu.com`,
+          name: `${firstName} ${lastName}`,
+          role: 'STUDENT',
+          isActive: 1,
+          isVerified: Math.random() > 0.2 ? 1 : 0
+        })
       }
 
-      // Combine all users
-      const allUsers = [
-        ...adminUsers.map(u => ({ ...u, role: 'SCHOOL_ADMIN', isActive: 1, isVerified: 1 })),
-        ...teacherUsers.map(u => ({ ...u, role: 'TEACHER', isActive: 1, isVerified: Math.random() > 0.1 ? 1 : 0 })),
-        ...studentUsers.map(u => ({ ...u, role: 'STUDENT', isActive: 1, isVerified: Math.random() > 0.2 ? 1 : 0 }))
-      ]
-
-      // Batch insert users
-      for (let i = 0; i < allUsers.length; i += batchSize) {
-        const batch = allUsers.slice(i, i + batchSize)
-        
-        for (const user of batch) {
+      // Insert users one by one (slower but more reliable)
+      let insertedCount = 0
+      for (const user of allUsers) {
+        try {
           await db.execute({
             sql: `INSERT INTO User (id, email, password, name, role, schoolId, phone, isActive, isVerified)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [user.id, user.email, hashedPassword, user.name, user.role, schoolId, randomPhone(), user.isActive, user.isVerified]
           })
+          insertedCount++
+          
+          // Log progress every 100 users
+          if (insertedCount % 100 === 0) {
+            console.log(`[seed-database] ${schoolData.code}: ${insertedCount}/${allUsers.length} users inserted`)
+          }
+        } catch (userError) {
+          console.error(`[seed-database] Failed to insert user ${user.email}:`, userError)
+          // Continue with other users instead of failing completely
         }
-        
-        console.log(`[seed-database] Inserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allUsers.length / batchSize)} for ${schoolData.code}`)
       }
 
-      totalUsers += allUsers.length
+      totalUsers += insertedCount
       totalTeachers += teacherCount
       totalStudents += studentCount
       totalAdmins += adminCount
@@ -327,13 +348,13 @@ export async function GET(request: Request) {
       results.push({
         school: schoolData.name,
         code: schoolData.code,
-        users: allUsers.length,
+        users: insertedCount,
         teachers: teacherCount,
         students: studentCount,
         admins: adminCount
       })
 
-      console.log(`[seed-database] Completed ${schoolData.name}: ${allUsers.length} users`)
+      console.log(`[seed-database] Completed ${schoolData.name}: ${insertedCount} users`)
     }
 
     const duration = Date.now() - startTime

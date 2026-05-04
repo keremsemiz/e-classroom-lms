@@ -255,6 +255,25 @@ export const db = {
       })
 
       return { id, ...args.data }
+    },
+    update: async (args: { where: { id: string }; data: any }) => {
+      const client = getDb()
+      const setClauses = Object.keys(args.data).map(k => `${k} = ?`).join(', ')
+      const values = [...Object.values(args.data), args.where.id]
+
+      await client.execute({
+        sql: `UPDATE School SET ${setClauses} WHERE id = ?`,
+        args: values
+      })
+
+      return { ...args.where, ...args.data }
+    },
+    delete: async (args: { where: { id: string } }) => {
+      const client = getDb()
+      await client.execute({
+        sql: 'DELETE FROM School WHERE id = ?',
+        args: [args.where.id]
+      })
     }
   },
 
