@@ -203,6 +203,75 @@ export async function GET(request: Request) {
       })
     }
 
+    if (action === 'fix-users') {
+      // Fix users that have NULL or invalid schoolId
+      console.log('[seed-batch] Fixing user-school assignments...')
+      
+      // Get all schools with their IDs
+      const schoolsResult = await db.execute('SELECT id, code FROM School')
+      const schoolMap = new Map<string, string>()
+      for (const row of schoolsResult.rows) {
+        schoolMap.set(row.code as string, row.id as string)
+      }
+      
+      // Get users with NULL schoolId
+      const nullSchoolUsers = await db.execute("SELECT id, email FROM User WHERE schoolId IS NULL AND role != 'SUPER_ADMIN'")
+      let fixedCount = 0
+      
+      for (const user of nullSchoolUsers.rows) {
+        const email = user.email as string
+        // Extract school code from email: schooladmin1.mnsk@smzedu.com -> MNSK
+        const match = email.match(/\.([a-z]+)@/i)
+        if (match) {
+          const schoolCode = match[1].toUpperCase()
+          const correctSchoolId = schoolMap.get(schoolCode)
+          if (correctSchoolId) {
+            await db.execute({
+              sql: 'UPDATE User SET schoolId = ? WHERE id = ?',
+              args: [correctSchoolId, user.id]
+            })
+            fixedCount++
+          }
+        }
+      }
+      
+      return NextResponse.json({
+        success: true,
+        action: 'fix-users',
+        fixedUsers: fixedCount,
+        nullSchoolUsersFound: nullSchoolUsers.rows.length,
+        message: `Fixed ${fixedCount} users with NULL schoolId`,
+        duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`
+      })
+    }
+
+    if (action === 'reset-users') {
+      // Clear all users except SUPER_ADMIN and start fresh
+      console.log('[seed-batch] Resetting all users...')
+      
+      await db.execute("DELETE FROM Grade")
+      await db.execute("DELETE FROM Submission")
+      await db.execute("DELETE FROM Attendance")
+      await db.execute("DELETE FROM Enrollment")
+      await db.execute("DELETE FROM Assignment")
+      await db.execute("DELETE FROM Announcement")
+      await db.execute("DELETE FROM Message")
+      await db.execute("DELETE FROM Notification")
+      await db.execute("DELETE FROM Session")
+      await db.execute("DELETE FROM File")
+      await db.execute("DELETE FROM Schedule")
+      await db.execute("DELETE FROM Class")
+      await db.execute("DELETE FROM User WHERE role != 'SUPER_ADMIN'")
+      
+      return NextResponse.json({
+        success: true,
+        action: 'reset-users',
+        message: 'All users cleared. Ready for fresh seeding.',
+        duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+        nextStep: { action: 'seed-users', schoolIndex: 0, userOffset: 0 }
+      })
+    }
+
     if (action === 'seed-users') {
       if (schoolIndex < 0 || schoolIndex >= SCHOOLS.length) {
         return NextResponse.json({
@@ -215,10 +284,11 @@ export async function GET(request: Request) {
       }
 
       const schoolData = SCHOOLS[schoolIndex]
-      const schoolResult = await db.execute({ sql: 'SELECT id FROM School WHERE code = ?', args: [schoolData.code] })
+      const schoolResult = await db.execute({ sql: 'SELECT id, name FROM School WHERE code = ?', args: [schoolData.code] })
       
       if (schoolResult.rows.length === 0) {
         // School doesn't exist, skip to next
+        console.log(`[seed-batch] School ${schoolData.code} not found, skipping...`)
         return NextResponse.json({
           success: true,
           action: 'seed-users',
@@ -229,6 +299,8 @@ export async function GET(request: Request) {
       }
       
       const schoolId = schoolResult.rows[0].id as string
+      const schoolName = schoolResult.rows[0].name as string
+      console.log(`[seed-batch] Seeding users for school: ${schoolName} (${schoolData.code}) with ID: ${schoolId}`)
       const hashedPassword = await getHashedPassword()
       
       const baseUsers = schoolData.code === 'GARDCCA' ? 1200 : 880

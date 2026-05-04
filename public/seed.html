@@ -156,6 +156,11 @@
       <p style="color: #64748b; margin-bottom: 16px;">This will create ~34,640 users across all schools. Click the button to start.</p>
       <button class="btn btn-success" id="btnSeedUsers" onclick="runSeedUsers()">Start Seeding Users</button>
       <button class="btn btn-secondary" id="btnAutoSeed" onclick="autoSeed()">Auto-Seed All (Recommended)</button>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <p style="color: #64748b; margin-bottom: 12px;">Troubleshooting Options:</p>
+        <button class="btn btn-secondary" onclick="runFixUsers()" style="background: #f59e0b;">Fix User-School Assignments</button>
+        <button class="btn btn-secondary" onclick="runResetUsers()" style="background: #ef4444;">Reset All Users</button>
+      </div>
     </div>
 
     <div id="stepComplete" class="hidden">
@@ -271,6 +276,41 @@
           log(`Created ${data.message}`);
           showAlert('Schools created! Now seed users.', 'success');
           setTimeout(() => { showStep('users'); checkStatus(); }, 1000);
+        } else {
+          log('Error: ' + data.error, 'error');
+        }
+      } catch (e) {
+        log('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function runFixUsers() {
+      log('Fixing user-school assignments...');
+      try {
+        const data = await fetchAPI({ action: 'fix-users' });
+        if (data.success) {
+          log(`Fixed ${data.fixedUsers} users with NULL schoolId`);
+          showAlert(`Fixed ${data.fixedUsers} users! Check status now.`, 'success');
+          await checkStatus();
+        } else {
+          log('Error: ' + data.error, 'error');
+        }
+      } catch (e) {
+        log('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function runResetUsers() {
+      if (!confirm('This will delete ALL users (except super admin). Are you sure?')) return;
+      log('Resetting all users...');
+      try {
+        const data = await fetchAPI({ action: 'reset-users' });
+        if (data.success) {
+          log('All users cleared successfully!');
+          showAlert('Users cleared! Now seed again.', 'success');
+          seedingState.schoolIndex = 0;
+          seedingState.userOffset = 0;
+          await checkStatus();
         } else {
           log('Error: ' + data.error, 'error');
         }

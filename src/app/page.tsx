@@ -132,6 +132,21 @@ interface NotificationData {
   createdAt: string;
 }
 
+const SMZ_EDUCATION_URL = 'https://smzedu.com';
+
+function SMZEducationLink({ className = '' }: { className?: string }) {
+  return (
+    <a
+      href={SMZ_EDUCATION_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`hover:underline ${className}`}
+    >
+      SMZ Education
+    </a>
+  );
+}
+
 // ============================================
 // API HELPERS
 // ============================================
@@ -193,40 +208,40 @@ const api = {
 
 function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-gray-950 dark:text-white">
       {/* Header */}
-      <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b bg-white/95 dark:bg-gray-900/95 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#0F2B4C' }}>
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">E-Classroom</span>
-              <span className="text-[10px] text-muted-foreground font-medium">SMZ Education</span>
+              <span className="text-xl font-bold text-slate-950 dark:text-white">E-Classroom</span>
+              <SMZEducationLink className="text-[10px] text-muted-foreground font-medium" />
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={onLogin}>Sign In</Button>
-            <Button onClick={onRegister} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">Get Started</Button>
+            <Button onClick={onRegister} className="bg-[#0F2B4C] hover:bg-[#173D68]">Get Started</Button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <Badge className="mb-4 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 border-0">✨ Simple. Clean. Accessible.</Badge>
+        <Badge className="mb-4 bg-white text-[#0F2B4C] border border-slate-200 dark:bg-gray-900 dark:text-blue-200 dark:border-gray-800">Simple. Clean. Accessible.</Badge>
         <h1 className="text-4xl md:text-6xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Modern Learning Management</span>
+          <span className="text-[#0F2B4C] dark:text-blue-200">Modern Learning Management</span>
           <br />
-          <span className="text-gray-900 dark:text-white">for Schools Worldwide</span>
+          <span>for Schools Worldwide</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           E-Classroom helps schools manage classes, assignments, grading, and communication in one simple platform.
           Built for accessibility and designed for schools with limited resources.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button size="lg" className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg" onClick={onRegister}>
+          <Button size="lg" className="gap-2 bg-[#0F2B4C] hover:bg-[#173D68] shadow-sm" onClick={onRegister}>
             <UserPlus className="w-5 h-5" /> Start Free Today
           </Button>
           <Button size="lg" variant="outline" className="gap-2" onClick={onLogin}>
@@ -243,17 +258,17 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { icon: BookOpen, title: 'Class Management', desc: 'Create and manage classes with unique join codes. Easy enrollment for students.', color: 'from-blue-500 to-blue-600' },
-            { icon: ClipboardList, title: 'Assignments', desc: 'Create, distribute, and collect assignments. Support for PDF and text submissions.', color: 'from-green-500 to-green-600' },
-            { icon: GraduationCap, title: 'Grading', desc: 'Simple grading interface with feedback. Track student progress over time.', color: 'from-purple-500 to-purple-600' },
-            { icon: Calendar, title: 'Attendance', desc: 'Mark and track daily attendance. View attendance history and patterns.', color: 'from-orange-500 to-orange-600' },
-            { icon: MessageSquare, title: 'Communication', desc: 'Direct messaging between teachers and students. Class announcements.', color: 'from-pink-500 to-pink-600' },
-            { icon: BarChart3, title: 'Analytics', desc: 'Visual dashboards for performance tracking. Insights for improvement.', color: 'from-cyan-500 to-cyan-600' },
+            { icon: BookOpen, title: 'Class Management', desc: 'Create and manage classes with unique join codes. Easy enrollment for students.', color: 'bg-[#0F2B4C]' },
+            { icon: ClipboardList, title: 'Assignments', desc: 'Create, distribute, and collect assignments. Support for PDF and text submissions.', color: 'bg-emerald-600' },
+            { icon: GraduationCap, title: 'Grading', desc: 'Simple grading interface with feedback. Track student progress over time.', color: 'bg-indigo-600' },
+            { icon: Calendar, title: 'Attendance', desc: 'Mark and track daily attendance. View attendance history and patterns.', color: 'bg-amber-600' },
+            { icon: MessageSquare, title: 'Communication', desc: 'Direct messaging between teachers and students. Class announcements.', color: 'bg-rose-600' },
+            { icon: BarChart3, title: 'Analytics', desc: 'Visual dashboards for performance tracking. Insights for improvement.', color: 'bg-cyan-700' },
           ].map((feature, i) => (
-            <Card key={i} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
-              <div className={`h-1 bg-gradient-to-r ${feature.color}`} />
+            <Card key={i} className="border-slate-200 bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group dark:bg-gray-900 dark:border-gray-800">
+              <div className="h-1 bg-slate-200 dark:bg-gray-800" />
               <CardHeader>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform`}>
+                <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-3 shadow-sm group-hover:scale-105 transition-transform`}>
                   <feature.icon className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle>{feature.title}</CardTitle>
@@ -267,7 +282,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
       </section>
 
       {/* Stats Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+      <section className="bg-[#0F2B4C] text-white py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold mb-2">Trusted Worldwide</h2>
@@ -294,16 +309,16 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#0F2B4C' }}>
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="font-bold text-lg">E-Classroom</span>
-                <span className="text-xs text-muted-foreground">A product of SMZ Education</span>
+                <span className="text-xs text-muted-foreground">A product of <SMZEducationLink /></span>
               </div>
             </div>
             <div className="text-center md:text-right">
-              <p className="text-muted-foreground">© 2024 SMZ Education. All rights reserved.</p>
+              <p className="text-muted-foreground">© 2024 <SMZEducationLink />. All rights reserved.</p>
               <p className="text-sm text-muted-foreground mt-1">Building educational infrastructure for schools worldwide.</p>
             </div>
           </div>
@@ -350,7 +365,7 @@ function LoginForm({ onSuccess, onSwitchToRegister }: { onSuccess: (user: AuthUs
           alt="Modern classroom"
           className="absolute inset-0 w-full h-full object-cover opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B4C] via-[#0F2B4C]/80 to-transparent" />
+        <div className="absolute inset-0 bg-[#0F2B4C]/85" />
         <div className="relative z-10 flex flex-col justify-center p-12 text-white">
           <div className="animate-fadeIn">
             <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
@@ -401,6 +416,11 @@ function LoginForm({ onSuccess, onSwitchToRegister }: { onSuccess: (user: AuthUs
           </div>
 
           <div className="text-center mb-8">
+            <img
+              src="/smz-eclassroom.png"
+              alt="E-Classroom by SMZ Education"
+              className="mx-auto mb-6 h-20 w-auto object-contain"
+            />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
             <p className="text-gray-500 dark:text-gray-400 mt-2">Sign in to your account</p>
           </div>
@@ -476,7 +496,7 @@ function LoginForm({ onSuccess, onSwitchToRegister }: { onSuccess: (user: AuthUs
           </div>
 
           <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-            <p className="text-xs text-gray-400">A product of SMZ Education</p>
+            <p className="text-xs text-gray-400">A product of <SMZEducationLink /></p>
           </div>
         </div>
       </div>
@@ -530,7 +550,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }: { onSuccess: (user: AuthUs
           alt="Modern classroom"
           className="absolute inset-0 w-full h-full object-cover opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F2B4C] via-[#0F2B4C]/80 to-transparent" />
+        <div className="absolute inset-0 bg-[#0F2B4C]/85" />
         <div className="relative z-10 flex flex-col justify-center p-12 text-white">
           <div className="animate-fadeIn">
             <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
@@ -701,7 +721,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }: { onSuccess: (user: AuthUs
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-            <p className="text-xs text-gray-400">A product of SMZ Education</p>
+            <p className="text-xs text-gray-400">A product of <SMZEducationLink /></p>
           </div>
         </div>
       </div>
@@ -777,12 +797,12 @@ function DashboardLayout({
           <Menu className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0F2B4C' }}>
             <GraduationCap className="w-4 h-4 text-white" />
           </div>
           <div className="flex flex-col leading-tight">
             <span className="font-bold text-sm">E-Classroom</span>
-            <span className="text-[10px] text-muted-foreground">by SMZ Education</span>
+            <span className="text-[10px] text-muted-foreground">by <SMZEducationLink /></span>
           </div>
         </div>
         <div className="relative">
@@ -801,12 +821,12 @@ function DashboardLayout({
       <aside className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 border-r z-40 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="h-16 flex items-center px-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: '#0F2B4C' }}>
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col leading-tight">
               <span className="font-bold text-base">E-Classroom</span>
-              <span className="text-[10px] text-muted-foreground">SMZ Education</span>
+              <SMZEducationLink className="text-[10px] text-muted-foreground" />
             </div>
           </div>
           <Button variant="ghost" size="icon" className="ml-auto lg:hidden" onClick={toggleSidebar}>
@@ -1454,16 +1474,16 @@ function SuperAdminDashboard({ user, onViewChange }: { user: AuthUser; onViewCha
       </div>
 
       {/* Platform Info */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-0">
+      <Card className="bg-white dark:bg-gray-900 border-slate-200 dark:border-gray-800">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#0F2B4C' }}>
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold">E-Classroom Platform</h3>
-                <p className="text-sm text-muted-foreground">SMZ Education • Version 1.0.0</p>
+                <p className="text-sm text-muted-foreground"><SMZEducationLink /> • Version 1.0.0</p>
               </div>
             </div>
             <Badge className="bg-green-500 hover:bg-green-500">All Systems Operational</Badge>
@@ -1663,16 +1683,16 @@ function SchoolAdminDashboard({ user, onViewChange }: { user: AuthUser; onViewCh
       </div>
 
       {/* School Info */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-0">
+      <Card className="bg-white dark:bg-gray-900 border-slate-200 dark:border-gray-800">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#0F2B4C' }}>
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold">School Information</h3>
-                <p className="text-sm text-muted-foreground">Manage your school settings • SMZ Education</p>
+                <p className="text-sm text-muted-foreground">Manage your school settings • <SMZEducationLink /></p>
               </div>
             </div>
             <Button variant="outline" size="sm">School Settings</Button>
