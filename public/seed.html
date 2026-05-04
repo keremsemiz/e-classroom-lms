@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database Seeding - E-Classroom SMZ Education</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0F2B4C 0%, #1E4D7B 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+    }
+    h1 { color: #0F2B4C; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .status-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: bold; color: #0F2B4C; }
+    .stat-label { color: #64748b; font-size: 0.875rem; }
+    .progress-bar {
+      background: #e2e8f0;
+      border-radius: 8px;
+      height: 12px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #0F2B4C, #1E4D7B);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .btn {
+      background: #0F2B4C;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .btn:hover { background: #1E4D7B; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: #10b981; }
+    .btn-success:hover { background: #059669; }
+    .log {
+      background: #1e293b;
+      color: #10b981;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.75rem;
+      padding: 16px;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+    .log-error { color: #ef4444; }
+    .log-info { color: #60a5fa; }
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .alert-warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+    }
+    .alert-success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    .hidden { display: none; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff40;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Database Seeding Tool</h1>
+    <p class="subtitle">E-Classroom LMS - SMZ Education Network</p>
+    
+    <div id="alertBox" class="alert alert-warning hidden"></div>
+    
+    <div class="status-card">
+      <h3 style="margin-bottom: 16px;">Current Database Status</h3>
+      <div class="status-grid">
+        <div class="stat">
+          <div class="stat-value" id="currentSchools">-</div>
+          <div class="stat-label">Schools</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="currentUsers">-</div>
+          <div class="stat-label">Users</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+      </div>
+      <p style="text-align: center; color: #64748b;" id="progressText">Loading...</p>
+    </div>
+
+    <div id="stepInit" class="hidden">
+      <h3 style="margin-bottom: 16px;">Step 1: Initialize Database</h3>
+      <p style="color: #64748b; margin-bottom: 16px;">This will clear all existing data and prepare for seeding.</p>
+      <button class="btn" onclick="runInit()">Initialize Database</button>
+    </div>
+
+    <div id="stepSchools" class="hidden">
+      <h3 style="margin-bottom: 16px;">Step 2: Create Schools</h3>
+      <p style="color: #64748b; margin-bottom: 16px;">Create all 39 SMZ Education schools.</p>
+      <button class="btn" onclick="runSeedSchools()">Create Schools</button>
+    </div>
+
+    <div id="stepUsers" class="hidden">
+      <h3 style="margin-bottom: 16px;">Step 3: Seed Users</h3>
+      <p style="color: #64748b; margin-bottom: 16px;">This will create ~34,640 users across all schools. Click the button to start.</p>
+      <button class="btn btn-success" id="btnSeedUsers" onclick="runSeedUsers()">Start Seeding Users</button>
+      <button class="btn btn-secondary" id="btnAutoSeed" onclick="autoSeed()">Auto-Seed All (Recommended)</button>
+    </div>
+
+    <div id="stepComplete" class="hidden">
+      <div class="alert alert-success">
+        <strong>Seeding Complete!</strong><br>
+        All 39 schools and ~34,640 users have been created.<br>
+        Default password: <code>password123</code>
+      </div>
+      <button class="btn" onclick="location.reload()">Refresh Status</button>
+      <a href="/" class="btn btn-secondary" style="text-decoration: none;">Go to Dashboard</a>
+    </div>
+
+    <div class="log" id="logBox">Ready...</div>
+  </div>
+
+  <script>
+    const API = '/api/seed-batch';
+    let seedingState = { schoolIndex: 0, userOffset: 0, isRunning: false };
+    
+    function log(msg, type = '') {
+      const logBox = document.getElementById('logBox');
+      const timestamp = new Date().toLocaleTimeString();
+      const colorClass = type === 'error' ? 'log-error' : type === 'info' ? 'log-info' : '';
+      logBox.innerHTML += `<span class="${colorClass}">[${timestamp}] ${msg}</span>\n`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function showAlert(msg, type = 'warning') {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('alertBox').classList.add('hidden');
+    }
+
+    function updateProgress(current, total, label) {
+      const percent = Math.round((current / total) * 100);
+      document.getElementById('progressBar').style.width = percent + '%';
+      document.getElementById('progressText').textContent = `${label}: ${current.toLocaleString()} / ${total.toLocaleString()} (${percent}%)`;
+    }
+
+    async function fetchAPI(params) {
+      const url = `${API}?${new URLSearchParams(params)}`;
+      log(`GET ${url}`, 'info');
+      const res = await fetch(url);
+      const data = await res.json();
+      log(`Response: ${JSON.stringify(data).substring(0, 200)}...`);
+      return data;
+    }
+
+    async function checkStatus() {
+      try {
+        const data = await fetchAPI({ action: 'status' });
+        if (data.success) {
+          document.getElementById('currentSchools').textContent = data.currentSchools;
+          document.getElementById('currentUsers').textContent = data.currentUsers.toLocaleString();
+          
+          const totalTargetUsers = 34640;
+          const userPercent = (data.currentUsers / totalTargetUsers) * 100;
+          updateProgress(data.currentUsers, totalTargetUsers, 'Users');
+          
+          // Determine which step to show
+          if (data.currentSchools === 0) {
+            showStep('init');
+          } else if (data.currentSchools < 39) {
+            showStep('schools');
+          } else if (data.currentUsers < totalTargetUsers) {
+            showStep('users');
+            seedingState.schoolIndex = Math.floor(data.currentUsers / 880);
+          } else {
+            showStep('complete');
+          }
+        }
+      } catch (e) {
+        log('Error checking status: ' + e.message, 'error');
+      }
+    }
+
+    function showStep(step) {
+      document.querySelectorAll('[id^="step"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('step' + step.charAt(0).toUpperCase() + step.slice(1)).classList.remove('hidden');
+    }
+
+    async function runInit() {
+      log('Initializing database...');
+      try {
+        const data = await fetchAPI({ action: 'init' });
+        if (data.success) {
+          log('Database initialized successfully!');
+          showAlert('Database cleared! Now create schools.', 'success');
+          setTimeout(() => { showStep('schools'); checkStatus(); }, 1000);
+        } else {
+          log('Error: ' + data.error, 'error');
+        }
+      } catch (e) {
+        log('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function runSeedSchools() {
+      log('Creating schools...');
+      try {
+        const data = await fetchAPI({ action: 'seed-schools' });
+        if (data.success) {
+          log(`Created ${data.message}`);
+          showAlert('Schools created! Now seed users.', 'success');
+          setTimeout(() => { showStep('users'); checkStatus(); }, 1000);
+        } else {
+          log('Error: ' + data.error, 'error');
+        }
+      } catch (e) {
+        log('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function runSeedUsers() {
+      log('Seeding users batch...');
+      try {
+        const data = await fetchAPI({ 
+          action: 'seed-users', 
+          schoolIndex: seedingState.schoolIndex, 
+          userOffset: seedingState.userOffset,
+          userBatch: 200
+        });
+        
+        if (data.success) {
+          log(`Inserted ${data.progress.insertedThisBatch} users for ${data.school.name}`);
+          
+          if (data.complete || data.progress.schoolComplete) {
+            if (data.complete) {
+              log('All seeding complete!', 'info');
+              showStep('complete');
+            } else {
+              seedingState.schoolIndex++;
+              seedingState.userOffset = 0;
+              log(`Moving to school ${seedingState.schoolIndex + 1}/39`, 'info');
+            }
+          } else {
+            seedingState.userOffset = data.progress.usersInSchool;
+          }
+          
+          await checkStatus();
+        } else {
+          log('Error: ' + data.error, 'error');
+        }
+        return data;
+      } catch (e) {
+        log('Error: ' + e.message, 'error');
+        return { success: false };
+      }
+    }
+
+    async function autoSeed() {
+      if (seedingState.isRunning) return;
+      seedingState.isRunning = true;
+      document.getElementById('btnAutoSeed').disabled = true;
+      document.getElementById('btnSeedUsers').disabled = true;
+      
+      log('Starting auto-seed...', 'info');
+      
+      let complete = false;
+      while (!complete && seedingState.isRunning) {
+        const data = await runSeedUsers();
+        if (data && data.complete) {
+          complete = true;
+          log('Auto-seed complete!', 'info');
+          showStep('complete');
+        }
+        // Small delay between batches to prevent overwhelming the server
+        await new Promise(r => setTimeout(r, 100));
+      }
+      
+      seedingState.isRunning = false;
+      document.getElementById('btnAutoSeed').disabled = false;
+      document.getElementById('btnSeedUsers').disabled = false;
+    }
+
+    // Initialize
+    checkStatus();
+  </script>
+</body>
+</html>
