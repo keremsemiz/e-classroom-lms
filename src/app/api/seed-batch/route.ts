@@ -45,7 +45,6 @@ const SCHOOLS = [
   { name: "École Bilingue Shiloh Académie", code: "EBSA", location: "Gandigal-Est, Senegal", type: "Bilingual" },
 ]
 
-// Extended West African names
 const FIRST_NAMES_MALE = [
   "Kwame", "Kofi", "Kwesi", "Yaw", "Kojo", "Kwabena", "Kwaku", "Akwasi", "Yao", "Kwasi",
   "Kwadwo", "Mawuena", "Mawuko", "Selorm", "Kafui", "Dzifa", "Etornam", "Eyram", "Delali", "Dela",
@@ -127,24 +126,29 @@ export async function GET(request: Request) {
   try {
     const startTime = Date.now()
 
+    // STATUS - Check current database state
     if (action === 'status') {
       const schoolCount = await db.execute('SELECT COUNT(*) as count FROM School')
       const userCount = await db.execute('SELECT COUNT(*) as count FROM User WHERE role != \'SUPER_ADMIN\'')
+      const nullSchoolCount = await db.execute('SELECT COUNT(*) as count FROM User WHERE schoolId IS NULL AND role != \'SUPER_ADMIN\'')
       
       return NextResponse.json({
         success: true,
         action: 'status',
         currentSchools: Number(schoolCount.rows[0]?.count || 0),
         currentUsers: Number(userCount.rows[0]?.count || 0),
+        nullSchoolUsers: Number(nullSchoolCount.rows[0]?.count || 0),
         targetSchools: SCHOOLS.length,
-        totalTargetUsers: '~34,640',
+        totalTargetUsers: 34640,
         defaultPassword: 'password123'
       })
     }
 
-    if (action === 'init') {
-      console.log('[seed-batch] Initializing database...')
+    // FRESH-START - Complete reset: wipe everything, create schools, ready for users
+    if (action === 'fresh-start') {
+      console.log('[seed-batch] 🔄 FRESH START - Wiping everything...')
       
+      // Delete all data in correct order (respecting foreign keys)
       await db.execute("DELETE FROM Grade")
       await db.execute("DELETE FROM Submission")
       await db.execute("DELETE FROM Attendance")
@@ -159,177 +163,114 @@ export async function GET(request: Request) {
       await db.execute("DELETE FROM Class")
       await db.execute("DELETE FROM User WHERE role != 'SUPER_ADMIN'")
       await db.execute("DELETE FROM School")
-
-      return NextResponse.json({
-        success: true,
-        action: 'init',
-        message: 'Database cleared',
-        duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
-        nextStep: { action: 'seed-schools', description: 'Call with action=seed-schools' }
-      })
-    }
-
-    if (action === 'seed-schools') {
-      console.log('[seed-batch] Creating schools...')
-      let created = 0
-      let skipped = 0
+      
+      console.log('[seed-batch] ✅ All data wiped')
+      
+      // Create all 39 schools fresh
+      console.log('[seed-batch] Creating 39 schools...')
+      let schoolsCreated = 0
+      const schoolIds: string[] = []
       
       for (const schoolData of SCHOOLS) {
-        // Check if school already exists
-        const existing = await db.execute({
-          sql: 'SELECT id FROM School WHERE code = ?',
-          args: [schoolData.code]
-        })
-        
-        if (existing.rows.length > 0) {
-          skipped++
-          continue
-        }
-        
         const schoolId = generateId()
+        schoolIds.push(schoolId)
         await db.execute({
           sql: `INSERT INTO School (id, name, code, address, email, isActive, description) VALUES (?, ?, ?, ?, ?, 1, ?)`,
           args: [schoolId, schoolData.name, schoolData.code, schoolData.location, `info@${schoolData.code.toLowerCase()}.smzedu.com`, `${schoolData.type} - SMZ Education`]
         })
-        created++
+        schoolsCreated++
       }
-
+      
+      console.log(`[seed-batch] ✅ Created ${schoolsCreated} schools`)
+      
+      // Reset id counter for consistent user seeding
+      idCounter = 0
+      
       return NextResponse.json({
         success: true,
-        action: 'seed-schools',
-        message: `Created ${created} schools, ${skipped} already existed`,
+        action: 'fresh-start',
+        message: `Database wiped clean. Created ${schoolsCreated} schools. Ready for user seeding.`,
+        schoolsCreated,
         duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
         nextStep: { action: 'seed-users', schoolIndex: 0, userOffset: 0, description: 'Start seeding users' }
       })
     }
 
-    if (action === 'fix-users') {
-      // Fix users that have NULL or invalid schoolId
-      console.log('[seed-batch] Fixing user-school assignments...')
-      
-      // Get all schools with their IDs
-      const schoolsResult = await db.execute('SELECT id, code FROM School')
-      const schoolMap = new Map<string, string>()
-      for (const row of schoolsResult.rows) {
-        schoolMap.set(row.code as string, row.id as string)
-      }
-      
-      // Get users with NULL schoolId
-      const nullSchoolUsers = await db.execute("SELECT id, email FROM User WHERE schoolId IS NULL AND role != 'SUPER_ADMIN'")
-      let fixedCount = 0
-      
-      for (const user of nullSchoolUsers.rows) {
-        const email = user.email as string
-        // Extract school code from email: schooladmin1.mnsk@smzedu.com -> MNSK
-        const match = email.match(/\.([a-z]+)@/i)
-        if (match) {
-          const schoolCode = match[1].toUpperCase()
-          const correctSchoolId = schoolMap.get(schoolCode)
-          if (correctSchoolId) {
-            await db.execute({
-              sql: 'UPDATE User SET schoolId = ? WHERE id = ?',
-              args: [correctSchoolId, user.id]
-            })
-            fixedCount++
-          }
-        }
-      }
-      
-      return NextResponse.json({
-        success: true,
-        action: 'fix-users',
-        fixedUsers: fixedCount,
-        nullSchoolUsersFound: nullSchoolUsers.rows.length,
-        message: `Fixed ${fixedCount} users with NULL schoolId`,
-        duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`
-      })
-    }
-
-    if (action === 'reset-users') {
-      // Clear all users except SUPER_ADMIN and start fresh
-      console.log('[seed-batch] Resetting all users...')
-      
-      await db.execute("DELETE FROM Grade")
-      await db.execute("DELETE FROM Submission")
-      await db.execute("DELETE FROM Attendance")
-      await db.execute("DELETE FROM Enrollment")
-      await db.execute("DELETE FROM Assignment")
-      await db.execute("DELETE FROM Announcement")
-      await db.execute("DELETE FROM Message")
-      await db.execute("DELETE FROM Notification")
-      await db.execute("DELETE FROM Session")
-      await db.execute("DELETE FROM File")
-      await db.execute("DELETE FROM Schedule")
-      await db.execute("DELETE FROM Class")
-      await db.execute("DELETE FROM User WHERE role != 'SUPER_ADMIN'")
-      
-      return NextResponse.json({
-        success: true,
-        action: 'reset-users',
-        message: 'All users cleared. Ready for fresh seeding.',
-        duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
-        nextStep: { action: 'seed-users', schoolIndex: 0, userOffset: 0 }
-      })
-    }
-
+    // SEED-USERS - Seed users for a specific school in batches
     if (action === 'seed-users') {
+      // Check if all schools exist first
+      const schoolCount = await db.execute('SELECT COUNT(*) as count FROM School')
+      if (Number(schoolCount.rows[0]?.count || 0) < SCHOOLS.length) {
+        return NextResponse.json({
+          success: false,
+          error: 'Schools not found. Run action=fresh-start first.',
+          hint: 'Call /api/seed-batch?action=fresh-start to initialize'
+        }, { status: 400 })
+      }
+
       if (schoolIndex < 0 || schoolIndex >= SCHOOLS.length) {
         return NextResponse.json({
           success: true,
           action: 'seed-users',
           complete: true,
-          message: 'All schools seeded!',
-          summary: { totalSchools: SCHOOLS.length, defaultPassword: 'password123' }
+          message: '🎉 All schools seeded successfully!',
+          summary: { totalSchools: SCHOOLS.length, totalUsers: 34640, defaultPassword: 'password123' }
         })
       }
 
       const schoolData = SCHOOLS[schoolIndex]
-      const schoolResult = await db.execute({ sql: 'SELECT id, name FROM School WHERE code = ?', args: [schoolData.code] })
+      
+      // Get the school ID
+      const schoolResult = await db.execute({ 
+        sql: 'SELECT id FROM School WHERE code = ?', 
+        args: [schoolData.code] 
+      })
       
       if (schoolResult.rows.length === 0) {
-        // School doesn't exist, skip to next
-        console.log(`[seed-batch] School ${schoolData.code} not found, skipping...`)
+        console.log(`[seed-batch] ⚠️ School ${schoolData.code} not found, skipping...`)
         return NextResponse.json({
           success: true,
           action: 'seed-users',
           school: { code: schoolData.code, name: schoolData.name, index: schoolIndex, total: SCHOOLS.length },
-          message: 'School not found, skipping',
+          message: 'School not found, skipping to next',
           nextStep: { action: 'seed-users', schoolIndex: schoolIndex + 1, userOffset: 0 }
         })
       }
       
       const schoolId = schoolResult.rows[0].id as string
-      const schoolName = schoolResult.rows[0].name as string
-      console.log(`[seed-batch] Seeding users for school: ${schoolName} (${schoolData.code}) with ID: ${schoolId}`)
       const hashedPassword = await getHashedPassword()
       
+      // Calculate user counts for this school
       const baseUsers = schoolData.code === 'GARDCCA' ? 1200 : 880
       const adminCount = Math.floor(baseUsers * 0.015)
       const teacherCount = Math.floor(baseUsers * 0.05)
       const studentCount = baseUsers - teacherCount - adminCount
       const totalUsers = adminCount + teacherCount + studentCount
       
-      // Check how many users already exist for this school
+      // Check existing users for this school
       const existingCount = await db.execute({
         sql: 'SELECT COUNT(*) as count FROM User WHERE schoolId = ?',
         args: [schoolId]
       })
       const existingUsers = Number(existingCount.rows[0]?.count || 0)
       
-      // If school is complete, move to next
+      // Skip if school is complete
       if (existingUsers >= totalUsers) {
+        console.log(`[seed-batch] ✓ School ${schoolData.code} complete (${existingUsers}/${totalUsers} users)`)
         return NextResponse.json({
           success: true,
           action: 'seed-users',
           school: { code: schoolData.code, name: schoolData.name, index: schoolIndex, total: SCHOOLS.length },
-          message: 'School already complete',
+          message: `School already complete with ${existingUsers} users`,
           nextStep: { action: 'seed-users', schoolIndex: schoolIndex + 1, userOffset: 0 }
         })
       }
       
-      // Start from where we left off
+      // Seed users in batch
       let currentIndex = Math.max(userOffset, existingUsers)
       let insertedThisBatch = 0
+      
+      console.log(`[seed-batch] Seeding ${schoolData.code}: ${existingUsers} existing, starting at index ${currentIndex}`)
       
       while (currentIndex < totalUsers && insertedThisBatch < userBatchSize) {
         let userRole: string, userNumber: number
@@ -359,8 +300,8 @@ export async function GET(request: Request) {
             args: [generateId(), email, hashedPassword, `${firstName} ${lastName}`, userRole, schoolId, randomPhone(), isVerified]
           })
           insertedThisBatch++
-        } catch (e) { 
-          // User might already exist, skip
+        } catch (e) {
+          // Skip duplicates
         }
         
         currentIndex++
@@ -370,19 +311,31 @@ export async function GET(request: Request) {
       const nextSchoolIndex = schoolComplete ? schoolIndex + 1 : schoolIndex
       const nextUserOffset = schoolComplete ? 0 : currentIndex
       
+      console.log(`[seed-batch] ✓ ${schoolData.code}: +${insertedThisBatch} users, ${currentIndex}/${totalUsers} total`)
+      
       return NextResponse.json({
         success: true,
         action: 'seed-users',
         school: { code: schoolData.code, name: schoolData.name, index: schoolIndex, total: SCHOOLS.length },
-        progress: { insertedThisBatch, usersInSchool: currentIndex, totalUsers, schoolComplete },
+        progress: { 
+          insertedThisBatch, 
+          usersInSchool: currentIndex, 
+          totalUsers, 
+          schoolComplete,
+          percentComplete: Math.round((currentIndex / totalUsers) * 100)
+        },
         duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
         nextStep: schoolComplete && nextSchoolIndex >= SCHOOLS.length 
-          ? { action: 'status', message: 'Seeding complete!' }
+          ? { action: 'status', message: 'Seeding complete! Check status.' }
           : { action: 'seed-users', schoolIndex: nextSchoolIndex, userOffset: nextUserOffset }
       })
     }
 
-    return NextResponse.json({ success: false, error: 'Invalid action. Use: status, init, seed-schools, or seed-users' }, { status: 400 })
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Invalid action',
+      availableActions: ['status', 'fresh-start', 'seed-users']
+    }, { status: 400 })
 
   } catch (error) {
     console.error('[seed-batch] Error:', error)
