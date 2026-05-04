@@ -95,6 +95,11 @@
       border: 1px solid #10b981;
       color: #065f46;
     }
+    .alert-info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
     .hidden { display: none; }
     .spinner {
       display: inline-block;
@@ -219,10 +224,15 @@
           if (data.currentSchools === 0) {
             showStep('init');
           } else if (data.currentSchools < 39) {
+            // Schools exist but not all - just run seed-schools to complete
             showStep('schools');
+            showAlert(`${data.currentSchools}/39 schools exist. Click to create remaining schools.`, 'warning');
           } else if (data.currentUsers < totalTargetUsers) {
             showStep('users');
-            seedingState.schoolIndex = Math.floor(data.currentUsers / 880);
+            // Calculate approximate school index based on user count
+            seedingState.schoolIndex = Math.min(Math.floor(data.currentUsers / 880), 38);
+            seedingState.userOffset = 0; // Will auto-detect from existing users
+            showAlert(`${data.currentUsers.toLocaleString()} users exist. Click Auto-Seed to continue.`, 'info');
           } else {
             showStep('complete');
           }

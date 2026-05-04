@@ -172,8 +172,20 @@ export async function GET(request: Request) {
     if (action === 'seed-schools') {
       console.log('[seed-batch] Creating schools...')
       let created = 0
+      let skipped = 0
       
       for (const schoolData of SCHOOLS) {
+        // Check if school already exists
+        const existing = await db.execute({
+          sql: 'SELECT id FROM School WHERE code = ?',
+          args: [schoolData.code]
+        })
+        
+        if (existing.rows.length > 0) {
+          skipped++
+          continue
+        }
+        
         const schoolId = generateId()
         await db.execute({
           sql: `INSERT INTO School (id, name, code, address, email, isActive, description) VALUES (?, ?, ?, ?, ?, 1, ?)`,
@@ -185,7 +197,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         action: 'seed-schools',
-        message: `Created ${created} schools`,
+        message: `Created ${created} schools, ${skipped} already existed`,
         duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
         nextStep: { action: 'seed-users', schoolIndex: 0, userOffset: 0, description: 'Start seeding users' }
       })
@@ -206,7 +218,14 @@ export async function GET(request: Request) {
       const schoolResult = await db.execute({ sql: 'SELECT id FROM School WHERE code = ?', args: [schoolData.code] })
       
       if (schoolResult.rows.length === 0) {
-        return NextResponse.json({ success: false, error: `School ${schoolData.code} not found. Run action=seed-schools first.` }, { status: 400 })
+        // School doesn't exist, skip to next
+        return NextResponse.json({
+          success: true,
+          action: 'seed-users',
+          school: { code: schoolData.code, name: schoolData.name, index: schoolIndex, total: SCHOOLS.length },
+          message: 'School not found, skipping',
+          nextStep: { action: 'seed-users', schoolIndex: schoolIndex + 1, userOffset: 0 }
+        })
       }
       
       const schoolId = schoolResult.rows[0].id as string
@@ -218,8 +237,27 @@ export async function GET(request: Request) {
       const studentCount = baseUsers - teacherCount - adminCount
       const totalUsers = adminCount + teacherCount + studentCount
       
+      // Check how many users already exist for this school
+      const existingCount = await db.execute({
+        sql: 'SELECT COUNT(*) as count FROM User WHERE schoolId = ?',
+        args: [schoolId]
+      })
+      const existingUsers = Number(existingCount.rows[0]?.count || 0)
+      
+      // If school is complete, move to next
+      if (existingUsers >= totalUsers) {
+        return NextResponse.json({
+          success: true,
+          action: 'seed-users',
+          school: { code: schoolData.code, name: schoolData.name, index: schoolIndex, total: SCHOOLS.length },
+          message: 'School already complete',
+          nextStep: { action: 'seed-users', schoolIndex: schoolIndex + 1, userOffset: 0 }
+        })
+      }
+      
+      // Start from where we left off
+      let currentIndex = Math.max(userOffset, existingUsers)
       let insertedThisBatch = 0
-      let currentIndex = userOffset
       
       while (currentIndex < totalUsers && insertedThisBatch < userBatchSize) {
         let userRole: string, userNumber: number
@@ -249,7 +287,9 @@ export async function GET(request: Request) {
             args: [generateId(), email, hashedPassword, `${firstName} ${lastName}`, userRole, schoolId, randomPhone(), isVerified]
           })
           insertedThisBatch++
-        } catch (e) { console.error(`Failed: ${email}`) }
+        } catch (e) { 
+          // User might already exist, skip
+        }
         
         currentIndex++
       }
